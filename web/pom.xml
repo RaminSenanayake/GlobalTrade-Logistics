@@ -29,6 +29,14 @@
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-security</artifactId>
         </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>persistence</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
