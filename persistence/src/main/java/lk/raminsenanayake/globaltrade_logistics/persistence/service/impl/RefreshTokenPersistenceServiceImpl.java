@@ -5,7 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.RefreshToken;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.RefreshTokenService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.RefreshTokenPersistenceService;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RequestScoped
 @Transactional
-public class RefreshTokenServiceImpl implements RefreshTokenService {
+public class RefreshTokenPersistenceServiceImpl implements RefreshTokenPersistenceService {
     private static final long REFRESH_TOKEN_VALIDITY_DAYS = 7;
 
     @PersistenceContext

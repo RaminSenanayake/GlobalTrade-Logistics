@@ -10,8 +10,8 @@ import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.InvalidCredent
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.service.LoginService;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.util.JwtUtil;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.RefreshToken;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.RefreshTokenService;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.RefreshTokenPersistenceService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserPersistenceService;
 
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +24,10 @@ public class LoginServiceImpl implements LoginService {
     private IdentityStoreHandler identityStoreHandler;
 
     @Inject
-    private RefreshTokenService refreshTokenService;
+    private RefreshTokenPersistenceService refreshTokenPersistenceService;
 
     @Inject
-    private UserService userService;
+    private UserPersistenceService userPersistenceService;
 
     @Override
     public Response login(String username, String password) {
@@ -39,7 +39,7 @@ public class LoginServiceImpl implements LoginService {
                     result.getCallerGroups()
             );
 
-            RefreshToken refreshToken = refreshTokenService.createToken(result.getCallerPrincipal().getName());
+            RefreshToken refreshToken = refreshTokenPersistenceService.createToken(result.getCallerPrincipal().getName());
 
             return Response.status(Response.Status.OK).entity(
                     Map.of(
@@ -56,7 +56,7 @@ public class LoginServiceImpl implements LoginService {
 
     @Override
     public Response refreshAccessToken(String refreshToken) {
-        Optional<RefreshToken> rt = refreshTokenService.findValidToken(refreshToken);
+        Optional<RefreshToken> rt = refreshTokenPersistenceService.findValidToken(refreshToken);
         if (rt.isEmpty()) {
             throw new InvalidCredentialException("Invalid or expired refresh token");
         }
@@ -64,10 +64,10 @@ public class LoginServiceImpl implements LoginService {
         RefreshToken oldToken = rt.get();
         String username = oldToken.getUsername();
 
-        refreshTokenService.deleteToken(oldToken.getToken());
-        RefreshToken newRefreshToken = refreshTokenService.createToken(username);
+        refreshTokenPersistenceService.deleteToken(oldToken.getToken());
+        RefreshToken newRefreshToken = refreshTokenPersistenceService.createToken(username);
 
-        String userRole = userService.getUser(username).get().getRole().toString();
+        String userRole = userPersistenceService.getUser(username).get().getRole().toString();
 
         String token = JwtUtil.generateToken(username, Set.of(userRole));
 

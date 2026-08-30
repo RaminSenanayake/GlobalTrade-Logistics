@@ -9,14 +9,14 @@ import jakarta.security.enterprise.identitystore.Pbkdf2PasswordHash;
 import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.User;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.UserRole;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserPersistenceService;
 
 import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
 @Transactional
-public class UserServiceImpl implements UserService {
+public class UserPersistenceServiceImpl implements UserPersistenceService {
 
     @PersistenceContext
     private EntityManager em;

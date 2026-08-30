@@ -6,7 +6,7 @@ import jakarta.security.enterprise.credential.Credential;
 import jakarta.security.enterprise.credential.UsernamePasswordCredential;
 import jakarta.security.enterprise.identitystore.CredentialValidationResult;
 import jakarta.security.enterprise.identitystore.IdentityStore;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserPersistenceService;
 
 import java.util.Set;
 
@@ -14,13 +14,13 @@ import java.util.Set;
 public class AppIdentityStore implements IdentityStore {
 
     @Inject
-    private UserService userService;
+    private UserPersistenceService userPersistenceService;
 
     @Override
     public CredentialValidationResult validate(Credential credential) {
         if (credential instanceof UsernamePasswordCredential usc) {
-            if (userService.validate(usc.getCaller(), usc.getPasswordAsString())) {
-                String role = userService.getUser(usc.getCaller()).get().getRole().toString();
+            if (userPersistenceService.validate(usc.getCaller(), usc.getPasswordAsString())) {
+                String role = userPersistenceService.getUser(usc.getCaller()).get().getRole().toString();
                 return new CredentialValidationResult(usc.getCaller(), Set.of(role));
             }
         }

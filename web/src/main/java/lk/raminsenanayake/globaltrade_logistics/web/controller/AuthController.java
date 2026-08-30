@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.Response;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.service.LoginService;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.User;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.UserRole;
-import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserService;
+import lk.raminsenanayake.globaltrade_logistics.persistence.service.UserPersistenceService;
 import lk.raminsenanayake.globaltrade_logistics.web.model.LoginRequest;
 import lk.raminsenanayake.globaltrade_logistics.web.model.RefreshRequest;
 import lk.raminsenanayake.globaltrade_logistics.web.model.RegisterUserRequest;
@@ -27,7 +27,7 @@ public class AuthController {
     private LoginService loginService;
 
     @Inject
-    private UserService userService;
+    private UserPersistenceService userPersistenceService;
 
     @POST
     @Path("/login")
@@ -60,14 +60,14 @@ public class AuthController {
                     .build();
         }
 
-        if (userService.existsByUsername(req.username())) {
+        if (userPersistenceService.existsByUsername(req.username())) {
             return Response.status(Response.Status.CONFLICT)
                     .entity(Map.of("error", "Username already exists: " + req.username()))
                     .build();
         }
 
         UserRole role = req.role() != null ? req.role() : UserRole.CUSTOMER;
-        User user = userService.createUser(req.username(), req.password(), role);
+        User user = userPersistenceService.createUser(req.username(), req.password(), role);
 
         return Response.status(Response.Status.CREATED).entity(Map.of(
                 "message", "User registered successfully",
@@ -80,7 +80,7 @@ public class AuthController {
     @Path("/users")
     @RolesAllowed("ADMIN")
     public Response listUsers() {
-        List<User> users = userService.getAllUsers();
+        List<User> users = userPersistenceService.getAllUsers();
         return Response.ok(users).build();
     }
 }
