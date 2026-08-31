@@ -34,8 +34,15 @@
             </dependency>
             <dependency>
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>web</artifactId>
+                <version>1.0</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
                 <artifactId>ejb-api</artifactId>
                 <version>1.0</version>
+                <type>ejb</type>
             </dependency>
             <dependency>
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
@@ -46,6 +53,7 @@
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
                 <artifactId>ejb-security</artifactId>
                 <version>1.0</version>
+                <type>ejb</type>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>

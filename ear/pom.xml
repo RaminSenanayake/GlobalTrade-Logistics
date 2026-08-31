@@ -31,14 +31,18 @@
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-api</artifactId>
             <version>1.0</version>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-security</artifactId>
+            <version>1.0</version>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>persistence</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 
@@ -50,6 +54,7 @@
                 <artifactId>maven-ear-plugin</artifactId>
                 <version>3.4.0</version>
                 <configuration>
+                    <defaultLibBundleDir>lib</defaultLibBundleDir>
                     <modules>
                         <webModule>
                             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>

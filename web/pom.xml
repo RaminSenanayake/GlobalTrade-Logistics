@@ -28,10 +28,12 @@
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-security</artifactId>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-api</artifactId>
+            <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>

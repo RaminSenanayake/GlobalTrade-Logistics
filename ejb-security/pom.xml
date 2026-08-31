@@ -11,6 +11,7 @@
 
     <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
     <artifactId>ejb-security</artifactId>
+    <packaging>ejb</packaging>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -35,6 +36,7 @@
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-api</artifactId>
+            <type>ejb</type>
         </dependency>
     </dependencies>
 
