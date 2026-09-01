@@ -9,11 +9,14 @@
     <version>1.0</version>
     <packaging>pom</packaging>
     <modules>
+        <module>persistence</module>
+        <module>ejb-api</module>
+        <module>ejb-security</module>
+        <module>ejb-customs</module>
+        <module>ejb-shipment</module>
+        <module>ejb-vendor</module>
         <module>web</module>
         <module>ear</module>
-        <module>ejb-api</module>
-        <module>persistence</module>
-        <module>ejb-security</module>
     </modules>
 
     <properties>
@@ -22,6 +25,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
         <mockito.version>5.11.0</mockito.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
     <dependencyManagement>
@@ -33,16 +37,10 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
-                <artifactId>web</artifactId>
-                <version>1.0</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
-                <artifactId>ejb-api</artifactId>
-                <version>1.0</version>
-                <type>ejb</type>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
@@ -51,9 +49,38 @@
             </dependency>
             <dependency>
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>ejb-api</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
                 <artifactId>ejb-security</artifactId>
                 <version>1.0</version>
                 <type>ejb</type>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>ejb-customs</artifactId>
+                <version>1.0</version>
+                <type>ejb</type>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>ejb-shipment</artifactId>
+                <version>1.0</version>
+                <type>ejb</type>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>ejb-vendor</artifactId>
+                <version>1.0</version>
+                <type>ejb</type>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>web</artifactId>
+                <version>1.0</version>
+                <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>

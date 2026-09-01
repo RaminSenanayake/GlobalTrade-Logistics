@@ -26,18 +26,43 @@
             <artifactId>jakarta.jakartaee-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-security</artifactId>
             <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-customs</artifactId>
+            <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-shipment</artifactId>
+            <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-vendor</artifactId>
+            <type>ejb</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>ejb-api</artifactId>
-            <type>ejb</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>persistence</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

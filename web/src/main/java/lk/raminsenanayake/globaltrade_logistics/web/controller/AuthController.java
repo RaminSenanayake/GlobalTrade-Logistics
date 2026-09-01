@@ -54,20 +54,20 @@ public class AuthController {
     @RolesAllowed("ADMIN")
     @Path("/register")
     public Response registerUser(RegisterUserRequest req) {
-        if (req == null || req.username() == null || req.password() == null) {
+        if (req == null || req.getUsername() == null || req.getPassword() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Username and password are required."))
                     .build();
         }
 
-        if (userPersistenceService.existsByUsername(req.username())) {
+        if (userPersistenceService.existsByUsername(req.getUsername())) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(Map.of("error", "Username already exists: " + req.username()))
+                    .entity(Map.of("error", "Username already exists: " + req.getUsername()))
                     .build();
         }
 
-        UserRole role = req.role() != null ? req.role() : UserRole.CUSTOMER;
-        User user = userPersistenceService.createUser(req.username(), req.password(), role);
+        UserRole role = req.getRole() != null ? UserRole.valueOf(req.getRole().toUpperCase()) : UserRole.CUSTOMER;
+        User user = userPersistenceService.createUser(req.getUsername(), req.getPassword(), role);
 
         return Response.status(Response.Status.CREATED).entity(Map.of(
                 "message", "User registered successfully",

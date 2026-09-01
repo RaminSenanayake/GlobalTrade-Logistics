@@ -1,245 +1,260 @@
 # GlobalTrade Logistics — Technical Implementation Documentation
 **Coursework / Module Reference:** BCD II / Enterprise Java Beans (EJB) Architecture  
-**Platform Version:** Jakarta EE 10 / WildFly Application Server  
+**Platform Version:** Jakarta EE 10 / GlassFish 7.0.25 (Java 17)  
 **Target Enterprise Archive:** `globaltrade-logistics-ear.ear`  
 
 ---
 
 ## 1. Executive Summary & Architecture Overview
 
-The **GlobalTrade Logistics** enterprise platform is a distributed, mission-critical supply chain coordination suite developed with Jakarta EE 10 and Enterprise Java Beans (EJB 3.1+). Designed for cross-border freight forwarding, maritime and air transit monitoring, automated regulatory customs compliance, and vendor performance management, the application enforces high concurrency, strong consistency, and container-managed resilience across all transactions.
+The **GlobalTrade Logistics** enterprise platform is a distributed, mission-critical supply chain coordination suite developed with Jakarta EE 10 and Enterprise Java Beans (EJB 3.1+). Designed for cross-border freight forwarding, maritime, rail, and air transit monitoring, automated regulatory customs compliance, stateful multi-step booking sessions, batch cargo dispatching, and vendor performance management, the platform guarantees high concurrency, ACID transaction consistency, and container-managed resilience.
 
 ### 1.1 Multi-Module Reactor Architecture
-The enterprise system is organized into decoupled Maven modules according to enterprise separation of concerns:
+The enterprise system is organized into nine Maven modules with strict separation of concerns across persistence entities, API contracts, security/interceptors, domain-specific EJB business logic, web REST layer, and EAR packaging:
+
 ```
 GlobalTrade Logistics (Root POM)
-├── persistence (JPA 3.1, Hibernate ORM 6.6, JTA Data Source)
-├── ejb-security (Jakarta Security 3.0, JWT Tokens, PBKDF2 Password Hashing)
-├── ejb-api (Enterprise Java Beans: Stateless, Stateful, Singleton, Timers, Interceptors, CMT/BMT)
-├── web (Jakarta RESTful Web Services 3.1 JAX-RS, Endpoints, DTOs)
+├── persistence (JPA 3.1, Hibernate ORM 6.6, EntityManagerProducer, JTA Data Source)
+├── ejb-api (Domain-specific Local Interfaces, Exceptions, DTOs - JAR)
+├── ejb-security (Interceptors in ejb_security.interceptor, JWT, PBKDF2, Scheduler - EJB JAR)
+├── ejb-customs (Customs compliance business logic & workflows - EJB JAR)
+├── ejb-shipment (Shipment tracking, routing, fulfillment, booking, scheduler - EJB JAR)
+├── ejb-vendor (Vendor evaluation, KPI scorecards, lifecycle - EJB JAR)
+├── web (Jakarta RESTful Web Services 3.1 JAX-RS, Endpoints, Request Models - WAR)
 └── ear (Enterprise Archive Packaging: globaltrade-logistics-ear.ear)
 ```
 
 ```mermaid
 graph TD
-    Client[REST / Microservice Clients] --> WebWAR[web.war - JAX-RS REST Layer]
-    WebWAR --> EjbSec[ejb-security.jar - JWT / PBKDF2 Identity Store]
-    WebWAR --> EjbAPI[ejb-api.jar - EJB Session Beans & Timers]
-    EjbAPI --> Interceptors[Interceptors: Audit, Performance, Validation, Regulatory]
-    EjbAPI --> PersistenceJAR[persistence.jar - Entities & Repositories]
-    PersistenceJAR --> JTA[(WildFly JTA Data Source: jdbc/globaltrade-logistics)]
-    PersistenceJAR --> DB[(MySQL Relational Database)]
+    Client["REST / Web / Mobile Clients"] --> WebWAR["web.war - JAX-RS REST Endpoints"]
+    WebWAR --> EjbSec["ejb-security.jar - Interceptors & Identity Services"]
+    WebWAR --> EjbCustoms["ejb-customs.jar - CustomsComplianceBean"]
+    WebWAR --> EjbShipment["ejb-shipment.jar - Tracking, Fulfillment, Routing, Booking, Singleton"]
+    WebWAR --> EjbVendor["ejb-vendor.jar - VendorEvaluationBean"]
+    EjbCustoms --> EjbAPI["ejb-api.jar (lib/) - Domain Interfaces & Exceptions"]
+    EjbShipment --> EjbAPI
+    EjbVendor --> EjbAPI
+    EjbCustoms --> EjbSec
+    EjbShipment --> EjbSec
+    EjbVendor --> EjbSec
+    EjbCustoms --> PersistenceJAR["persistence.jar (lib/) - JPA Entities & DAOs"]
+    EjbShipment --> PersistenceJAR
+    EjbVendor --> PersistenceJAR
+    PersistenceJAR --> JTA[("JTA Data Source: jdbc/globaltrade-logistics")]
+    PersistenceJAR --> DB[("MySQL Relational Database")]
 ```
 
 ---
 
-## 2. EJB Session Bean Design & Implementations
+## 2. EJB Session Bean Design & Domain Module Implementations
 
-The core business logic leverages all three primary EJB session bean paradigms along with Local and Remote business interfaces:
+The core business logic is partitioned into dedicated EJB JAR modules leveraging Stateless, Stateful, and Singleton session bean lifecycles:
 
-### 2.1 Stateless Session Beans (`@Stateless`)
-Stateless session beans handle idempotent and transactional supply chain workflows with minimal resource overhead.
-
-1. **[`ShipmentTrackingBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/ShipmentTrackingBean.java)**:
-   - Implements both [`ShipmentTrackingServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/ShipmentTrackingServiceLocal.java) (intra-EAR collocated calls) and [`ShipmentTrackingServiceRemote`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/ShipmentTrackingServiceRemote.java) (cross-network RMI-IIOP invocation).
-   - Manages shipment creation, milestone updates, dynamic ETA recalculation, and vendor assignments.
-   - Enforces Container-Managed Transactions (`REQUIRED` for write operations; `SUPPORTS` for read queries).
-   - Combines declarative security (`@RolesAllowed`) with programmatic caller verification (`SessionContext.isCallerInRole`).
-
-2. **[`CustomsComplianceBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/CustomsComplianceBean.java)**:
-   - Exposes [`CustomsComplianceServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/CustomsComplianceServiceLocal.java) and [`CustomsComplianceServiceRemote`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/CustomsComplianceServiceRemote.java).
-   - Automated tariff and customs duty calculation based on destination trade jurisdiction (0% domestic, 5% standard international, 7.5% Tier-1 trade zones like USA/DEU).
-   - Electronic customs declaration filing, status reviews, and officer clearance workflows.
-
-3. **[`OrderFulfillmentBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/OrderFulfillmentBean.java)**:
-   - Coordinates complex multi-phase logistics fulfillment: inventory reservation & atomic decrement, shipment generation, and cross-border customs filing.
-   - Leverages CMT transaction boundary orchestration:
-     - `@TransactionAttribute(TransactionAttributeType.REQUIRED)` on `fulfillOrder(...)`.
-     - `@TransactionAttribute(TransactionAttributeType.MANDATORY)` on `verifyAndDeductStockAtomic(...)`.
-   - If stock is insufficient, triggers an `@ApplicationException(rollback = true)` (`InsufficientInventoryException`), automatically reverting all database writes.
-
-4. **[`RouteOptimizationBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/RouteOptimizationBean.java)**:
-   - Computes multimodal logistics routing: `ROAD_EXPRESS` (domestic), `MARITIME_HAZMAT` (hazardous freight), `OCEAN_FREIGHT` (heavy freight >500kg), and `AIR_FREIGHT` (express freight).
-   - Estimates transit transit hours, freight rate calculations, and carbon emission footprints.
-
-5. **[`VendorEvaluationBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/VendorEvaluationBean.java)**:
-   - Computes vendor performance KPIs, on-time delivery rates, and weighted quality ratings (60% timeliness + 40% feedback score).
-   - Updates compliance statuses (`COMPLIANT`, `UNDER_REVIEW`, `SUSPENDED`).
-
-### 2.2 Stateful Session Bean (`@Stateful`)
-- **[`ShipmentBookingSessionBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/ShipmentBookingSessionBean.java)**:
-  - Preserves conversational client state across a multi-step shipment booking journey:
-    1. `initBooking(sender, origin, destination)`
-    2. `addFreightItem(sku, name, quantity, unitPrice, weight)`
-    3. `setCarrierAndHazardous(carrier, isHazardous)`
-    4. `getBookingSummary()`
-    5. `confirmAndDispatch()` (annotated with `@Remove`)
-    6. `cancelBooking()` (annotated with `@Remove`)
-  - Full EJB Lifecycle Callbacks implemented:
-    - `@PostConstruct`: Allocates unique conversational session GUID and sets initial state.
-    - `@PrePassivate`: Serializes state prior to container passivation to secondary storage.
-    - `@PostActivate`: Restores state upon container reactivation.
-    - `@PreDestroy`: Cleans up active conversational resources when removed.
-
-### 2.3 Singleton Session Bean (`@Singleton`, `@Startup`)
-- **[`SupplyChainMonitoringBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/SupplyChainMonitoringBean.java)**:
-  - Startup bean instantiated upon application deployment (`@Startup`).
-  - Bootstraps baseline system data via [`DataInitializerService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/DataInitializerService.java).
-  - Configured with Container-Managed Concurrency (`@ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)`):
-    - Concurrent read access using `@Lock(LockType.READ)` for `getSystemStatus()`, `getUnacknowledgedAlerts()`, and `getRecentPerformanceMetrics()`.
-    - Mutex write access using `@Lock(LockType.WRITE)` for `acknowledgeAlert()`.
+### 2.1 Customs Compliance Module (`ejb-customs`)
+- **[`CustomsComplianceBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-customs/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_customs/service/impl/CustomsComplianceBean.java)** (`@Stateless`):
+  - Implements [`CustomsComplianceServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/customs/CustomsComplianceServiceLocal.java).
+  - Handles electronic filing of customs declarations (`submitDeclaration`).
+  - Generates auto-sequenced declaration numbers (`DEC-...`), sets 72-hour filing deadlines, and transitions shipment status to `PENDING_CLEARANCE`.
+  - Conducts officer reviews (`reviewDeclaration`): updates declaration status to `APPROVED` (transitioning shipment to `IN_TRANSIT`) or `REJECTED` (placing shipment on `CUSTOMS_HOLD` and raising high-severity `CUSTOMS_HOLD` alerts).
+  - Provides queries for pending declarations and approaching deadline declarations.
+  - Decorated with interceptors: `@Interceptors({AuditLoggingInterceptor.class, RegulatoryComplianceInterceptor.class, PerformanceMonitoringInterceptor.class})`.
 
 ---
 
-## 3. EJB Interceptor Architecture
+### 2.2 Shipment & Logistics Module (`ejb-shipment`)
 
-A comprehensive interceptor pipeline decorates business beans, executing orthogonal cross-cutting concerns:
+1. **[`ShipmentTrackingBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/ShipmentTrackingBean.java)** (`@Stateless`):
+   - Implements [`ShipmentTrackingServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/ShipmentTrackingServiceLocal.java).
+   - Manages shipment creation with tracking number generation (`GTL-...`), item association, milestone updates (`updateShipmentStatus`), sender queries, and potential delay scanning (`detectPotentialDelays`).
+   - Decorated with `@Interceptors({AuditLoggingInterceptor.class, RegulatoryComplianceInterceptor.class, PerformanceMonitoringInterceptor.class})`.
+
+2. **[`OrderFulfillmentBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/OrderFulfillmentBean.java)** (`@Stateless`):
+   - Implements [`OrderFulfillmentServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/OrderFulfillmentServiceLocal.java).
+   - Coordinates inventory validation, atomic stock deduction, safety reorder threshold alerts (`INVENTORY_SHORTAGE`), and automated shipment generation with status `IN_TRANSIT`.
+   - Throws [`InsufficientInventoryException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/InsufficientInventoryException.java) (annotated with `@ApplicationException(rollback = true)`) on stock deficits.
+
+3. **[`RouteOptimizationBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/RouteOptimizationBean.java)** (`@Stateless`):
+   - Implements [`RouteOptimizationServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/RouteOptimizationServiceLocal.java).
+   - Analyzes multimodal logistics routes: `AIR` (`DHL-EXPRESS`, `FEDEX-CARGO`), `SEA` (`MAERSK-OCEAN`), and `RAIL` (`EURASIA-RAIL`).
+   - Dynamically evaluates optimal paths based on priority filters: `COST` (cheapest rate), `SPEED` (fastest transit time), `EMISSION` / `ECO` (lowest carbon footprint), and `RELIABILITY` (lowest risk score).
+
+4. **[`BatchLogisticsBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/BatchLogisticsBean.java)** (`@Stateless`):
+   - Implements [`BatchLogisticsServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/BatchLogisticsServiceLocal.java).
+   - High-throughput processing of batch dispatches (`processBatchDispatch`), aggregating successful dispatches and error diagnostics without failing the entire batch run.
+   - Generates consolidated shipment manifests (`generateConsolidatedManifest`) with total weight and declared value summaries.
+
+5. **[`ShipmentBookingSessionBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/ShipmentBookingSessionBean.java)** (`@Stateful`):
+   - Implements [`ShipmentBookingServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/ShipmentBookingServiceLocal.java).
+   - Preserves conversational client booking state across multi-step flows:
+     1. `startBooking(sender, origin, destination)`
+     2. `addItem(sku, description, quantity, weightKg, declaredValue)`
+     3. `removeItem(sku)`
+     4. `selectCarrier(carrierCode, serviceLevel)`
+     5. `getCurrentSummary()`
+     6. `confirmBooking()` (`@Remove`)
+     7. `cancelBooking()` (`@Remove`)
+
+6. **[`SupplyChainMonitoringBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/SupplyChainMonitoringBean.java)** (`@Singleton`, `@Startup`):
+   - Implements [`SupplyChainMonitoringServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/SupplyChainMonitoringServiceLocal.java).
+   - Bootstraps default administrative accounts and baseline demo inventory via `@PostConstruct` and [`DataInitializerService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/DataInitializerService.java).
+   - Container-Managed Concurrency (`@ConcurrencyManagement(CONTAINER)`):
+     - Concurrent read access using `@Lock(LockType.READ)` for `getSystemStatus()`, `getUnacknowledgedAlerts()`, and `getRecentPerformanceMetrics()`.
+     - Exclusive write access using `@Lock(LockType.WRITE)` for `acknowledgeAlert()`.
+
+7. **[`LogisticsSchedulerBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/LogisticsSchedulerBean.java)** (`@Singleton`, `@Startup`, `@RunAs("ADMIN")`):
+   - Implements [`LogisticsSchedulerServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/shipment/LogisticsSchedulerServiceLocal.java).
+   - Periodic delay detection (`@Schedule(hour = "*", minute = "*/15", persistent = false)`).
+   - Periodic customs deadline escalation (`@Schedule(hour = "*", minute = "*/30", persistent = false)`).
+   - Midnight inventory restock check (`@Schedule(hour = "0", minute = "0", persistent = false)`).
+
+---
+
+### 2.3 Vendor Management Module (`ejb-vendor`)
+- **[`VendorEvaluationBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-vendor/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_vendor/service/impl/VendorEvaluationBean.java)** (`@Stateless`):
+  - Implements [`VendorEvaluationServiceLocal`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/vendor/VendorEvaluationServiceLocal.java).
+  - Handles vendor registration with auto-generated vendor codes (`VND-...`).
+  - Evaluates vendor performance KPIs (`evaluateVendor`): computes on-time delivery rates, performance ratings (1.0 - 5.0), and updates compliance status (`COMPLIANT`, `PROBATION`, `SUSPENDED`). Raises `VENDOR_PERFORMANCE_DEGRADED` alert when performance falls below SLA thresholds.
+  - Safe vendor assignment (`assignVendorToShipment`) protected by `@Interceptors({VendorValidationInterceptor.class})`.
+
+---
+
+## 3. Persistence Architecture & CDI Producer Pattern (`persistence`)
+
+### 3.1 Entity-Relationship Structure
+The persistence layer manages relational persistence across 9 core entities mapped via JPA 3.1:
+- `User`: System security callers, salted password hashes, and assigned `UserRole`.
+- `RefreshToken`: Cryptographic multi-session refresh tokens with expiration timestamps.
+- `Inventory`: Warehouse SKUs, available quantities, unit values, and safety reorder thresholds.
+- `Shipment`: Master shipment records with origin/destination country codes, routing parameters, and lifecycle `ShipmentStatus`.
+- `ShipmentItem`: Line items associated with shipments (cascade-managed).
+- `CustomsDeclaration`: Regulatory tariff filings, compliance status, clearance dates, and filing deadlines.
+- `Vendor`: Carrier partner profiles, SLA scorecards, on-time delivery ratios, and compliance statuses.
+- `SupplyChainAlert`: High-priority operational alerts with severity levels (`INFO`, `WARNING`, `CRITICAL`, `BLOCKER`).
+- `AuditLog` and `PerformanceMetricRecord`: Immutable security audit logs and execution telemetry.
+
+### 3.2 CDI 4.0 `EntityManagerProducer`
+To ensure cross-module dependency injection in GlassFish 7 / Jakarta EE 10 without CDI Unsatisfied Dependency exceptions across library boundaries in `ear/lib/`:
+- [`EntityManagerProducer`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/producer/EntityManagerProducer.java) exposes `@Produces public EntityManager produceEntityManager()` with `@PersistenceContext(unitName = "globaltrade-logistics")` and fallback to JNDI and `EntityManagerFactory`.
+- All persistence services inject `EntityManager` via standard CDI `@Inject private EntityManager em;`.
+- Explicit `META-INF/beans.xml` with `bean-discovery-mode="all"` is defined across `persistence`, `ejb-api`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, and `web`.
+
+---
+
+## 4. EJB Interceptor Architecture (`ejb-security`)
+
+All system interceptors are located in package [`lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/):
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Caller as Client / REST Controller
     participant InterceptorChain as Interceptor Pipeline
-    participant Audit as AuditLoggingInterceptor (REQUIRES_NEW)
+    participant Audit as AuditLoggingInterceptor
     participant Perf as PerformanceMonitoringInterceptor
     participant Valid as VendorValidationInterceptor
     participant Reg as RegulatoryComplianceInterceptor
-    participant Bean as EJB Business Bean (OrderFulfillmentBean)
+    participant Bean as EJB Bean
 
-    Caller->>InterceptorChain: invoke fulfillOrder(...)
-    InterceptorChain->>Audit: Capture caller identity & parameters
-    Audit->>Perf: Start stopwatch
-    Perf->>Valid: Validate parameters (non-null, non-negative)
-    Valid->>Reg: Validate country compliance (embargo check)
-    Reg->>Bean: Execute business logic in CMT transaction
-    Bean-->>Reg: Return Shipment entity
+    Caller->>InterceptorChain: Method Invocation
+    InterceptorChain->>Audit: Capture audit context
+    Audit->>Perf: Start execution stopwatch
+    Perf->>Valid: Check vendor eligibility and status
+    Valid->>Reg: Verify embargoed destinations and high value
+    Reg->>Bean: Execute EJB business logic
+    Bean-->>Reg: Return result
     Reg-->>Valid: Propagate result
-    Valid-->>Perf: Stop stopwatch & record SLA metrics
-    Perf-->>Audit: Complete audit entry in independent transaction
-    Audit-->>Caller: Return response to caller
+    Valid-->>Perf: Stop stopwatch and record execution metrics
+    Perf-->>Audit: Persist audit log entry
+    Audit-->>Caller: Return response
 ```
 
-1. **[`AuditLoggingInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/interceptor/AuditLoggingInterceptor.java)**:
-   - Inspects `SessionContext` for caller principal and assigned roles (`ADMIN`, `LOGISTIC_PERSONNEL`, etc.).
-   - Persists audit trail records using [`AuditLogPersistenceService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/AuditLogPersistenceService.java) under `TransactionAttributeType.REQUIRES_NEW`. This guarantees audit entries are permanently saved even if the parent business transaction encounters an exception and rolls back.
+1. **[`AuditLoggingInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/AuditLoggingInterceptor.java)**:
+   - Captures class name, method name, execution parameters, and timestamps.
+   - Logs details and persists audit records in `AuditLog` via [`AuditLogPersistenceService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/AuditLogPersistenceService.java) using `REQUIRES_NEW` transaction isolation.
 
-2. **[`VendorValidationInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/interceptor/VendorValidationInterceptor.java)**:
-   - Validates method arguments before execution: prevents null values, empty strings, negative numerical values, and ensures 3-letter ISO country codes. Throws [`ValidationException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/ValidationException.java) on breach.
+2. **[`PerformanceMonitoringInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/PerformanceMonitoringInterceptor.java)**:
+   - Measures method execution duration in milliseconds.
+   - Automatically saves telemetry in `PerformanceMetricRecord` via [`PerformanceMetricPersistenceService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/PerformanceMetricPersistenceService.java).
 
-3. **[`PerformanceMonitoringInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/interceptor/PerformanceMonitoringInterceptor.java)**:
-   - Calculates elapsed wall-clock execution time in milliseconds. Records historical metrics via [`PerformanceMetricPersistenceService`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/persistence/src/main/java/lk/raminsenanayake/globaltrade_logistics/persistence/service/PerformanceMetricPersistenceService.java).
-   - Generates SLA violation warnings in the server log whenever an operation exceeds 250ms.
+3. **[`VendorValidationInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/VendorValidationInterceptor.java)**:
+   - Validates vendor status when vendor codes (`VND-...`) or `Vendor` instances are passed to business methods.
+   - Prevents assignment of `SUSPENDED` vendors, throwing [`VendorComplianceException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/VendorComplianceException.java).
 
-4. **[`RegulatoryComplianceInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/interceptor/RegulatoryComplianceInterceptor.java)**:
-   - Intercepts origin and destination parameters against international trade sanctions lists (e.g., sanctioned countries like `PRK`, `IRN`, `SYR`, `CUB`). Throws [`TradeComplianceViolationException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/TradeComplianceViolationException.java).
+4. **[`RegulatoryComplianceInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/RegulatoryComplianceInterceptor.java)**:
+   - Checks origin and destination against international trade sanctions (`PRK`, `IRN`, `SYR`, `CUB`, `SDN`).
+   - Automatically generates high-priority `TRADE_SANCTION_DETECTED` alerts and throws [`TradeComplianceViolationException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/TradeComplianceViolationException.java).
+   - Flags shipments exceeding $100,000 USD declared value for special customs review.
 
-5. **[`SecurityAuthorizationInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/interceptor/SecurityAuthorizationInterceptor.java)**:
-   - Enforces security checks preventing anonymous callers from invoking privileged trade business logic.
-
----
-
-## 4. EJB Timer Services
-
-Both declarative and programmatic scheduling mechanisms are unified in [`LogisticsSchedulerBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/LogisticsSchedulerBean.java):
-
-### 4.1 Declarative Timers (`@Schedule`)
-| Method | Cron / Schedule Expression | Persistence | Purpose |
-| :--- | :--- | :--- | :--- |
-| `checkShipmentDelays()` | `second = "*/30"` | Non-persistent | Scans in-transit shipments past estimated delivery, marks status as `DELAYED`, and generates automated alerts. |
-| `monitorInventoryLevels()` | `minute = "*/2"` | Non-persistent | Identifies stock falling below reorder threshold and flags shortage alerts for warehouse procurement. |
-| `trackCustomsDeadlines()` | `minute = "*/5"` | Non-persistent | Tracks cross-border declarations within 12 hours of the 48-hour filing deadline and raises critical alerts. |
-| `evaluateVendorPerformance()`| `hour = "0", minute = "0"` | Non-persistent | Daily recalculation of vendor on-time delivery rates and compliance standing. |
-| `refreshRouteOptimizations()` | `minute = "*/10"` | Non-persistent | Refreshes global multimodal route and carrier tariff cache. |
-
-### 4.2 Programmatic Timers (`TimerService` & `@Timeout`)
-- Injects `@Resource private TimerService timerService`.
-- Exposes `scheduleCustomsFilingDeadline(declarationNumber, timeoutSeconds)` and `schedulePriorityShipmentEscalation(trackingNumber, timeoutSeconds)` using `TimerConfig`.
-- `@Timeout public void onTimeoutCallback(Timer timer)`:
-  - Handles programmatic timer expirations.
-  - Automatically dispatches high-severity alerts (`SupplyChainAlert`) into the persistence layer.
+5. **[`SecurityAuthorizationInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/SecurityAuthorizationInterceptor.java)**:
+   - Programmatic security validation interceptor ensuring authorized caller execution.
 
 ---
 
-## 5. Transaction Management: CMT & BMT
+## 5. Security & Identity Store Architecture (`ejb-security`)
 
-### 5.1 Container-Managed Transactions (CMT)
-The application utilizes explicit transaction attributes to control transactional scope across business beans:
-- `REQUIRED`: Applied on `createShipment`, `updateShipmentStatus`, `fulfillOrder`, `fileDeclaration`, `reviewDeclaration`. Participates in existing JTA transaction or starts a new one.
-- `REQUIRES_NEW`: Applied on `AuditLogPersistenceServiceImpl.logAudit` and `AlertPersistenceServiceImpl.recordAlert`. Runs in an autonomous physical database transaction independent of caller rollbacks.
-- `MANDATORY`: Applied on `OrderFulfillmentBean.verifyAndDeductStockAtomic`. Guarantees that stock can only be deducted inside a verified, active caller transaction.
-- `SUPPORTS`: Applied on all read/query methods (`getAllShipments`, `getDeclaration`, `getSystemStatus`) for lightweight, non-transactional execution.
-
-### 5.2 Bean-Managed Transactions (BMT)
-- Implemented in [`BatchLogisticsBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/service/impl/BatchLogisticsBean.java) via `@TransactionManagement(TransactionManagementType.BEAN)`.
-- Injects `@Resource private UserTransaction utx;`.
-- Enables explicit demarcation for bulk operations:
-  - `executeBatchReplenishment(amount)`: Loops through depleted inventory items, executing `utx.begin()` and `utx.commit()` per item. If an individual item update fails, invokes `utx.rollback()` and records the error message without aborting the remainder of the batch.
-  - `executeBatchShipmentDispatch(trackingNumbers)`: Demarcates atomic batch dispatches with rollback recovery.
+- **Jakarta Security 3.0 Standard**: Implements [`AppIdentityStore`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/security/AppIdentityStore.java) and [`JwtAuthMechanism`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/security/JwtAuthMechanism.java).
+- **Password Hashing**: Uses `Pbkdf2PasswordHash` for salted hash creation and verification.
+- **Stateless JWT Tokens**: Signed HMAC-256 tokens carrying username and role scopes (`ADMIN`, `LOGISTIC_PERSONNEL`, `CUSTOM_OFFICIAL`, `VENDOR`, `CUSTOMER`).
+- **Token Lifecycle**: [`RefreshTokenCleanupScheduler`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/schedule/RefreshTokenCleanupScheduler.java) automatically purges expired tokens via periodic `@Schedule` timers.
 
 ---
 
-## 6. Security Architecture & Role-Based Access Control
+## 6. RESTful Web Services Reference (`web`)
 
-The security model bridges Jakarta Security with EJB declarative and programmatic authorizations across 5 operational roles:
-- `ADMIN`: Full platform access, user management, vendor onboarding, batch overrides.
-- `LOGISTIC_PERSONNEL`: Shipment booking, carrier assignment, inventory restocking, monitoring.
-- `CUSTOM_OFFICIAL`: Inspection, duty approvals, and clearance of international declarations.
-- `VENDOR`: View and update status of shipments specifically assigned to their vendor account.
-- `CUSTOMER`: Create shipments, manage conversational bookings, and track personal shipments.
+Base Context: `/api` (configured in `RestApplication.java`)
 
-### 6.1 Declarative Security
-- Annotated session beans declare supported roles: `@DeclareRoles({"ADMIN", "LOGISTIC_PERSONNEL", "VENDOR", "CUSTOM_OFFICIAL", "CUSTOMER"})`.
-- Method-level gating via `@RolesAllowed({"ADMIN", "LOGISTIC_PERSONNEL"})`.
-
-### 6.2 Programmatic Security
-- Programmatic access control via `SessionContext`:
-  - In `ShipmentTrackingBean.getShipmentByTrackingNumber`: Verifies that callers with the `CUSTOMER` role can only access shipments where `caller.getName().equals(shipment.getSenderUsername())`.
-  - In `ShipmentTrackingBean.updateShipmentStatus`: Checks that callers with the `VENDOR` role are authorized strictly for shipments assigned to their vendor identifier.
-  - Throws standard `jakarta.ejb.EJBAccessException` if caller fails ownership checks.
-
----
-
-## 7. RESTful Web Services & Endpoints Reference
-
-Base Path: `/api` (configured in `RestApplication.java`)
-
-| Resource | HTTP Method | Path | Required Role | Description |
+| Domain | Method | Endpoint Path | Roles Allowed | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Auth** | `POST` | `/auth/login` | Public | Authenticates credentials and issues JWT tokens. |
-| | `POST` | `/auth/refresh` | Public | Issues new access token from refresh token. |
-| | `POST` | `/auth/register` | Public / Admin | Registers new user account with specified role. |
-| | `GET` | `/auth/users` | Admin | Returns list of registered users. |
-| **Inventory** | `GET` | `/inventory` | Public / Authenticated | Lists all inventory items. |
-| | `GET` | `/inventory/{sku}` | Public / Authenticated | Fetches inventory details by SKU. |
-| | `GET` | `/inventory/low-stock` | Logistics / Admin | Lists items below reorder threshold. |
-| | `POST` | `/inventory` | Logistics / Admin | Registers a new inventory SKU. |
-| | `POST` | `/inventory/{sku}/restock` | Logistics / Admin | Restocks item inventory. |
-| **Shipments**| `POST` | `/shipments` | Customer / Logistics | Creates a new shipment order. |
-| | `GET` | `/shipments` | Logistics / Admin | Lists all shipments. |
-| | `GET` | `/shipments/{trackingNumber}` | Authenticated | Retrieves shipment tracking details. |
-| | `PUT` | `/shipments/{trackingNumber}/status` | Vendor / Logistics | Updates milestone status and notes. |
-| | `PUT` | `/shipments/{trackingNumber}/assign-vendor` | Logistics / Admin | Assigns partner carrier vendor. |
-| | `DELETE`| `/shipments/{trackingNumber}` | Logistics / Admin | Cancels shipment. |
-| **Customs** | `POST` | `/customs` | Logistics / Admin | Files an electronic customs declaration. |
-| | `GET` | `/customs` | Customs / Logistics | Lists all filed customs declarations. |
-| | `GET` | `/customs/{decNumber}`| Customs / Logistics | Retrieves specific declaration details. |
-| | `PUT` | `/customs/{decNumber}/review` | Customs Official | Approves, inspects, or rejects declaration. |
-| **Vendors** | `GET` | `/vendors` | Logistics / Admin | Lists partner freight vendors. |
-| | `POST` | `/vendors` | Admin | Registers a new vendor partner. |
-| | `GET` | `/vendors/{code}` | Authenticated | Retrieves vendor KPI metrics. |
-| | `POST` | `/vendors/{code}/evaluate` | Logistics / Admin | Evaluates and updates vendor KPIs. |
-| **Routes** | `GET` | `/routes/optimize` | Authenticated | Multimodal route calculations. |
-| **Monitoring**| `GET` | `/monitoring/status` | Authenticated | System KPI health status summary. |
-| | `GET` | `/monitoring/alerts` | Logistics / Admin | Unacknowledged supply chain alerts. |
-| | `POST` | `/monitoring/alerts/{id}/ack` | Logistics / Admin | Acknowledges an active alert. |
-| | `GET` | `/monitoring/metrics` | Logistics / Admin | Execution latency and SLA metrics. |
-| | `POST` | `/monitoring/timers/trigger-delays` | Logistics / Admin | Manual trigger for delay check timer. |
-| | `POST` | `/monitoring/timers/schedule-deadline` | Logistics / Admin | Programmatic escalation timer. |
-| **Batch BMT**| `POST` | `/batch/replenish` | Logistics / Admin | BMT batch inventory replenishment. |
-| | `POST` | `/batch/dispatch` | Logistics / Admin | BMT batch shipment dispatch. |
-| **Stateful**| `POST` | `/booking/start` | Customer / Logistics | Starts stateful booking session. |
-| | `POST` | `/booking/{sessionId}/items` | Customer / Logistics | Adds item to booking cart. |
-| | `POST` | `/booking/{sessionId}/carrier` | Customer / Logistics | Sets carrier & hazardous cargo. |
-| | `GET` | `/booking/{sessionId}/summary` | Customer / Logistics | Reviews current booking state. |
-| | `POST` | `/booking/{sessionId}/confirm` | Customer / Logistics | Confirms and ends session (`@Remove`). |
-| | `DELETE`| `/booking/{sessionId}` | Customer / Logistics | Cancels and destroys session (`@Remove`).|
+| **Auth** | `POST` | `/auth/login` | Permitted | Authenticate user and issue JWT token |
+| | `POST` | `/auth/refresh` | Permitted | Exchange refresh token for new access token |
+| | `POST` | `/auth/register` | `ADMIN` | Register new user account |
+| | `GET` | `/auth/users` | `ADMIN` | List registered system users |
+| **Inventory** | `GET` | `/inventory` | Authenticated | List all inventory items |
+| | `GET` | `/inventory/{sku}` | Authenticated | Get inventory item details by SKU |
+| | `GET` | `/inventory/low-stock` | `ADMIN`, `LOGISTIC_PERSONNEL` | Retrieve items below safety reorder threshold |
+| | `POST` | `/inventory` | `ADMIN`, `LOGISTIC_PERSONNEL` | Create a new inventory record |
+| | `POST` | `/inventory/{sku}/restock` | `ADMIN`, `LOGISTIC_PERSONNEL` | Restock item quantity |
+| **Shipments** | `POST` | `/shipments` | `ADMIN`, `LOGISTIC_PERSONNEL`, `CUSTOMER` | Create and register a shipment |
+| | `GET` | `/shipments` | Authenticated | List all shipments |
+| | `GET` | `/shipments/{trackingNumber}`| Authenticated | Retrieve shipment details |
+| | `GET` | `/shipments/user/{username}` | Authenticated | Retrieve shipments by sender username |
+| | `PUT` | `/shipments/{trackingNumber}/status` | `ADMIN`, `LOGISTIC_PERSONNEL` | Update milestone status |
+| | `GET` | `/shipments/delays` | `ADMIN`, `LOGISTIC_PERSONNEL` | Scan for delayed shipments |
+| **Customs** | `POST` | `/customs/declarations` | `ADMIN`, `CUSTOM_OFFICIAL`, `LOGISTIC_PERSONNEL` | Submit electronic customs declaration |
+| | `PUT` | `/customs/declarations/{decNum}/review` | `ADMIN`, `CUSTOM_OFFICIAL` | Official approval or rejection review |
+| | `GET` | `/customs/compliance/{trackingNumber}` | Authenticated | Verify customs clearance compliance |
+| | `GET` | `/customs/declarations/pending` | `ADMIN`, `CUSTOM_OFFICIAL` | List pending declarations |
+| | `GET` | `/customs/declarations/deadlines` | `ADMIN`, `CUSTOM_OFFICIAL` | Declarations approaching filing deadline |
+| **Vendors** | `POST` | `/vendors` | `ADMIN` | Register new vendor |
+| | `GET` | `/vendors` | Authenticated | List vendors (optional status filter) |
+| | `POST` | `/vendors/{vendorCode}/evaluate` | `ADMIN`, `LOGISTIC_PERSONNEL` | Recalculate vendor performance scorecard |
+| | `GET` | `/vendors/{vendorCode}/scorecard` | Authenticated | Retrieve vendor scorecard |
+| | `POST` | `/vendors/assign` | `ADMIN`, `LOGISTIC_PERSONNEL` | Assign vendor to shipment |
+| **Routes** | `GET` | `/routes/optimize` | Authenticated | Calculate optimal route (`COST`, `SPEED`, `ECO`, `RELIABILITY`) |
+| | `GET` | `/routes/compare` | Authenticated | Compare multimodal routing options |
+| **Stateful Booking** | `POST` | `/booking/start` | Authenticated | Start stateful shipment booking session |
+| | `POST` | `/booking/items` | Authenticated | Add item to booking cart |
+| | `DELETE`| `/booking/items/{sku}` | Authenticated | Remove item from booking cart |
+| | `POST` | `/booking/carrier` | Authenticated | Select carrier and service level |
+| | `GET` | `/booking/summary` | Authenticated | Retrieve booking summary |
+| | `POST` | `/booking/confirm` | Authenticated | Confirm booking and dispatch shipment (`@Remove`) |
+| | `POST` | `/booking/cancel` | Authenticated | Cancel and destroy booking session (`@Remove`) |
+| **Batch Operations** | `POST` | `/batch/dispatch` | `ADMIN`, `LOGISTIC_PERSONNEL` | Batch process multiple dispatches |
+| | `POST` | `/batch/manifest` | `ADMIN`, `LOGISTIC_PERSONNEL` | Generate consolidated cargo manifest |
+| **Monitoring** | `GET` | `/monitoring/status` | `ADMIN`, `LOGISTIC_PERSONNEL` | System KPI health status summary |
+| | `GET` | `/monitoring/alerts` | `ADMIN`, `LOGISTIC_PERSONNEL` | Retrieve unacknowledged supply chain alerts |
+| | `PUT` | `/monitoring/alerts/{id}/acknowledge` | `ADMIN`, `LOGISTIC_PERSONNEL` | Acknowledge active alert |
+| | `GET` | `/monitoring/metrics` | `ADMIN` | Retrieve execution telemetry metrics |
+
+---
+
+## 7. Enterprise Archive Packaging (`ear`)
+
+The complete multi-module project packages into a single deployable EAR archive:
+- **`globaltrade-logistics-ear.ear`**:
+  - `web.war` (Web module with JAX-RS REST endpoints)
+  - `ejb-security.jar` (Security, IdentityStore, and Interceptor EJB module)
+  - `ejb-customs.jar` (Customs EJB module)
+  - `ejb-shipment.jar` (Shipment, Routing, Fulfillment, Booking, Monitoring EJB module)
+  - `ejb-vendor.jar` (Vendor Management EJB module)
+  - `lib/` directory containing shared runtime libraries: `persistence.jar`, `ejb-api.jar`, `java-jwt.jar`, `jackson-databind.jar`, Hibernate ORM, and MySQL Connector/J.

@@ -29,15 +29,32 @@
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
-            <artifactId>ejb-api</artifactId>
+            <artifactId>ejb-security</artifactId>
             <version>1.0</version>
             <type>ejb</type>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
-            <artifactId>ejb-security</artifactId>
+            <artifactId>ejb-customs</artifactId>
             <version>1.0</version>
             <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-shipment</artifactId>
+            <version>1.0</version>
+            <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-vendor</artifactId>
+            <version>1.0</version>
+            <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+            <artifactId>ejb-api</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
@@ -54,7 +71,6 @@
                 <artifactId>maven-ear-plugin</artifactId>
                 <version>3.4.0</version>
                 <configuration>
-                    <defaultLibBundleDir>lib</defaultLibBundleDir>
                     <modules>
                         <webModule>
                             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
@@ -62,6 +78,7 @@
                             <contextRoot>/</contextRoot>
                         </webModule>
                     </modules>
+                    <defaultLibBundleDir>lib</defaultLibBundleDir>
                 </configuration>
             </plugin>
         </plugins>

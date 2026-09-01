@@ -68,10 +68,10 @@ public class VendorPersistenceServiceImpl implements VendorPersistenceService {
             v.setTotalShipmentsHandled(totalHandled);
             v.setDelayedShipmentsCount(delayedCount);
             v.setLastEvaluatedAt(LocalDateTime.now());
-            if (onTimeRate < 70.0 || rating < 2.5) {
-                v.setComplianceStatus(VendorComplianceStatus.UNDER_REVIEW);
-            } else if (onTimeRate < 50.0 || rating < 1.5) {
+            if (onTimeRate < 50.0 || rating < 1.5) {
                 v.setComplianceStatus(VendorComplianceStatus.SUSPENDED);
+            } else if (onTimeRate < 70.0 || rating < 2.5) {
+                v.setComplianceStatus(VendorComplianceStatus.UNDER_REVIEW);
             } else {
                 v.setComplianceStatus(VendorComplianceStatus.COMPLIANT);
             }

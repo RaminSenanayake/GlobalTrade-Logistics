@@ -11,7 +11,7 @@
 
     <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
     <artifactId>ejb-api</artifactId>
-    <packaging>ejb</packaging>
+    <packaging>jar</packaging>
     <name>ejb-api</name>
 
     <properties>
@@ -24,6 +24,7 @@
         <dependency>
             <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
             <artifactId>persistence</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>

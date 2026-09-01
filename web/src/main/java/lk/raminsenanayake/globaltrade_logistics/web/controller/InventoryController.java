@@ -50,26 +50,26 @@ public class InventoryController {
     @POST
     @RolesAllowed({"ADMIN", "LOGISTIC_PERSONNEL"})
     public Response createInventoryItem(CreateInventoryRequest req) {
-        if (req == null || req.sku() == null || req.name() == null) {
+        if (req == null || req.getSku() == null || req.getName() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "SKU and Name are mandatory."))
                     .build();
         }
 
-        if (inventoryPersistenceService.findBySku(req.sku()).isPresent()) {
+        if (inventoryPersistenceService.findBySku(req.getSku()).isPresent()) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(Map.of("error", "Inventory item with SKU already exists: " + req.sku()))
+                    .entity(Map.of("error", "Inventory item with SKU already exists: " + req.getSku()))
                     .build();
         }
 
         Inventory inventory = new Inventory(
-                req.sku(),
-                req.name(),
-                req.category(),
-                req.quantity(),
-                req.reorderThreshold(),
-                req.unitPrice(),
-                req.warehouseLocation()
+                req.getSku(),
+                req.getName(),
+                req.getCategory(),
+                req.getQty(),
+                req.getReorderThreshold(),
+                req.getUnitPrice(),
+                req.getWarehouseLocation()
         );
 
         Inventory saved = inventoryPersistenceService.save(inventory);
@@ -80,7 +80,7 @@ public class InventoryController {
     @Path("/{sku}/restock")
     @RolesAllowed({"ADMIN", "LOGISTIC_PERSONNEL"})
     public Response restockItem(@PathParam("sku") String sku, RestockRequest req) {
-        if (req == null || req.quantity() <= 0) {
+        if (req == null || req.getQuantity() <= 0) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Restock quantity must be greater than zero."))
                     .build();
@@ -93,7 +93,7 @@ public class InventoryController {
                     .build();
         }
 
-        inventoryPersistenceService.restock(sku, req.quantity());
+        inventoryPersistenceService.restock(sku, req.getQuantity());
         Inventory updated = inventoryPersistenceService.findBySku(sku).orElse(null);
         return Response.ok(updated).build();
     }
