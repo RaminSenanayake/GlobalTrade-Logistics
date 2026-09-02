@@ -7,6 +7,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.*;
 import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptors;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.SystemStatusSummary;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.SupplyChainMonitoringServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.AuditLoggingInterceptor;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.PerformanceMonitoringInterceptor;

@@ -4,6 +4,8 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptors;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.BatchDispatchItem;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.BatchDispatchResult;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.LogisticsBatchProcessingException;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.BatchLogisticsServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.AuditLoggingInterceptor;

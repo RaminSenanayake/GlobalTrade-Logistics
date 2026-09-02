@@ -4,6 +4,7 @@ import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.VendorScorecard;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.vendor.VendorEvaluationServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Vendor;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.VendorComplianceStatus;
@@ -34,14 +35,14 @@ public class VendorController {
     @POST
     @Path("/{vendorCode}/evaluate")
     public Response evaluateVendor(@PathParam("vendorCode") String vendorCode) {
-        VendorEvaluationServiceLocal.VendorScorecard scorecard = vendorService.evaluateVendor(vendorCode);
+        VendorScorecard scorecard = vendorService.evaluateVendor(vendorCode);
         return Response.ok(scorecard).build();
     }
 
     @GET
     @Path("/{vendorCode}/scorecard")
     public Response getScorecard(@PathParam("vendorCode") String vendorCode) {
-        VendorEvaluationServiceLocal.VendorScorecard scorecard = vendorService.getVendorScorecard(vendorCode);
+        VendorScorecard scorecard = vendorService.getVendorScorecard(vendorCode);
         return Response.ok(scorecard).build();
     }
 

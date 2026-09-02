@@ -1,6 +1,7 @@
 package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 
-import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.RouteOptimizationServiceLocal;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteOption;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,7 @@ class RouteOptimizationBeanTest {
 
     @Test
     void calculateOptimalRoute_CostPriority_SelectsCheapest() {
-        RouteOptimizationServiceLocal.RouteResult result = bean.calculateOptimalRoute("USA", "GBR", 20.0, "COST");
+        RouteResult result = bean.calculateOptimalRoute("USA", "GBR", 20.0, "COST");
 
         assertNotNull(result);
         assertEquals("USA", result.getOrigin());
@@ -32,7 +33,7 @@ class RouteOptimizationBeanTest {
 
     @Test
     void calculateOptimalRoute_SpeedPriority_SelectsFastest() {
-        RouteOptimizationServiceLocal.RouteResult result = bean.calculateOptimalRoute("USA", "DEU", 15.0, "SPEED");
+        RouteResult result = bean.calculateOptimalRoute("USA", "DEU", 15.0, "SPEED");
 
         assertNotNull(result);
         assertEquals("DHL-EXPRESS", result.getOptimalRoute().getCarrierCode());
@@ -41,7 +42,7 @@ class RouteOptimizationBeanTest {
 
     @Test
     void compareRoutes_ReturnsAllAvailableOptions() {
-        List<RouteOptimizationServiceLocal.RouteOption> options = bean.compareRoutes("USA", "JPN", 50.0);
+        List<RouteOption> options = bean.compareRoutes("USA", "JPN", 50.0);
         assertNotNull(options);
         assertEquals(4, options.size());
     }

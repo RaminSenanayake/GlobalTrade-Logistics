@@ -4,6 +4,7 @@ import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.SystemStatusSummary;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.SupplyChainMonitoringServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.PerformanceMetricRecord;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.SupplyChainAlert;
@@ -21,7 +22,7 @@ public class SupplyChainMonitoringController {
     @GET
     @Path("/status")
     public Response getSystemStatus() {
-        SupplyChainMonitoringServiceLocal.SystemStatusSummary summary = monitoringService.getSystemStatus();
+        SystemStatusSummary summary = monitoringService.getSystemStatus();
         return Response.ok(summary).build();
     }
 

@@ -4,6 +4,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptors;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.OrderItemDto;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.InsufficientInventoryException;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.OrderFulfillmentServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.AuditLoggingInterceptor;

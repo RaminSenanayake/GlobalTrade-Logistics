@@ -3,6 +3,8 @@ package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 import jakarta.annotation.security.PermitAll;
 import jakarta.ejb.Stateless;
 import jakarta.interceptor.Interceptors;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteOption;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteResult;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.RouteOptimizationServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.AuditLoggingInterceptor;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.PerformanceMonitoringInterceptor;

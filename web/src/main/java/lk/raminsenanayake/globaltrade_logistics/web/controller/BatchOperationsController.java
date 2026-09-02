@@ -4,6 +4,7 @@ import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.BatchDispatchResult;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.BatchLogisticsServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.web.model.BatchDispatchRequest;
 
@@ -20,7 +21,7 @@ public class BatchOperationsController {
     @POST
     @Path("/dispatch")
     public Response processBatchDispatch(BatchDispatchRequest request) {
-        BatchLogisticsServiceLocal.BatchDispatchResult result = batchService.processBatchDispatch(request.getItems());
+        BatchDispatchResult result = batchService.processBatchDispatch(request.getItems());
         return Response.ok(result).build();
     }
 

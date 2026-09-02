@@ -5,6 +5,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptors;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.VendorScorecard;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.VendorComplianceException;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.vendor.VendorEvaluationServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.ejb_security.interceptor.AuditLoggingInterceptor;

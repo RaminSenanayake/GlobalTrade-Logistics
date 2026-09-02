@@ -1,6 +1,7 @@
 package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 
-import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.BatchLogisticsServiceLocal;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.BatchDispatchItem;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.BatchDispatchResult;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Shipment;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.ShipmentPersistenceService;
 import org.junit.jupiter.api.Test;
@@ -28,14 +29,14 @@ class BatchLogisticsBeanTest {
     void processBatchDispatch_Success() {
         when(shipmentService.save(any(Shipment.class))).thenAnswer(i -> i.getArgument(0));
 
-        BatchLogisticsServiceLocal.BatchDispatchItem item1 = new BatchLogisticsServiceLocal.BatchDispatchItem(
+        BatchDispatchItem item1 = new BatchDispatchItem(
                 "USA", "GBR", "USER1", "CARRIER1", 5.0, 100.0, "SKU1", 2
         );
-        BatchLogisticsServiceLocal.BatchDispatchItem item2 = new BatchLogisticsServiceLocal.BatchDispatchItem(
+        BatchDispatchItem item2 = new BatchDispatchItem(
                 "USA", "FRA", "USER2", "CARRIER2", 3.0, 50.0, "SKU2", 1
         );
 
-        BatchLogisticsServiceLocal.BatchDispatchResult result = bean.processBatchDispatch(List.of(item1, item2));
+        BatchDispatchResult result = bean.processBatchDispatch(List.of(item1, item2));
 
         assertNotNull(result);
         assertEquals(2, result.getTotalProcessed());

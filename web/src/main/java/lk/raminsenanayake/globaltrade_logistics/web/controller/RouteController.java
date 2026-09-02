@@ -4,6 +4,8 @@ import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteOption;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.RouteResult;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.RouteOptimizationServiceLocal;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public class RouteController {
             @QueryParam("weight") double weight,
             @QueryParam("priority") @DefaultValue("COST") String priority) {
 
-        RouteOptimizationServiceLocal.RouteResult result = routeService.calculateOptimalRoute(origin, destination, weight, priority);
+        RouteResult result = routeService.calculateOptimalRoute(origin, destination, weight, priority);
         return Response.ok(result).build();
     }
 
@@ -35,7 +37,7 @@ public class RouteController {
             @QueryParam("destination") String destination,
             @QueryParam("weight") double weight) {
 
-        List<RouteOptimizationServiceLocal.RouteOption> options = routeService.compareRoutes(origin, destination, weight);
+        List<RouteOption> options = routeService.compareRoutes(origin, destination, weight);
         return Response.ok(options).build();
     }
 }

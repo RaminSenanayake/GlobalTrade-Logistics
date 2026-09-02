@@ -1,6 +1,6 @@
 package lk.raminsenanayake.globaltrade_logistics.ejb_vendor.service.impl;
 
-import lk.raminsenanayake.globaltrade_logistics.ejb_api.vendor.VendorEvaluationServiceLocal;
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.VendorScorecard;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Shipment;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.ShipmentStatus;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Vendor;
@@ -64,7 +64,7 @@ class VendorEvaluationBeanTest {
 
         when(shipmentService.findAll()).thenReturn(List.of(s1, s2));
 
-        VendorEvaluationServiceLocal.VendorScorecard scorecard = bean.evaluateVendor("VND-001");
+        VendorScorecard scorecard = bean.evaluateVendor("VND-001");
         assertNotNull(scorecard);
         assertEquals(100.0, scorecard.getOnTimeDeliveryRate());
         assertEquals(5.0, scorecard.getPerformanceRating());

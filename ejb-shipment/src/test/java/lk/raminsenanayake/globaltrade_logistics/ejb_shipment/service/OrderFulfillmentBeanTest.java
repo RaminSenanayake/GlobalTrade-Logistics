@@ -1,7 +1,7 @@
 package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 
+import lk.raminsenanayake.globaltrade_logistics.ejb_api.dto.OrderItemDto;
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.InsufficientInventoryException;
-import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.OrderFulfillmentServiceLocal;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Inventory;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Shipment;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.AlertPersistenceService;
@@ -41,7 +41,7 @@ class OrderFulfillmentBeanTest {
         when(inventoryService.findBySku("SKU-100")).thenReturn(Optional.of(inv));
         when(shipmentService.save(any(Shipment.class))).thenAnswer(i -> i.getArgument(0));
 
-        OrderFulfillmentServiceLocal.OrderItemDto item = new OrderFulfillmentServiceLocal.OrderItemDto("SKU-100", 5, 25.0, 2.0);
+        OrderItemDto item = new OrderItemDto("SKU-100", 5, 25.0, 2.0);
         Shipment shipment = bean.fulfillOrder("ORD-001", "DEU", List.of(item), "DHL-EXPRESS");
 
         assertNotNull(shipment);
@@ -54,7 +54,7 @@ class OrderFulfillmentBeanTest {
         Inventory inv = new Inventory("SKU-100", "Widget A", "Electronics", 2, 10, 25.0, "WH-1");
         when(inventoryService.findBySku("SKU-100")).thenReturn(Optional.of(inv));
 
-        OrderFulfillmentServiceLocal.OrderItemDto item = new OrderFulfillmentServiceLocal.OrderItemDto("SKU-100", 10, 25.0, 2.0);
+        OrderItemDto item = new OrderItemDto("SKU-100", 10, 25.0, 2.0);
         assertThrows(InsufficientInventoryException.class, () -> bean.fulfillOrder("ORD-001", "DEU", List.of(item), "DHL-EXPRESS"));
     }
 }
