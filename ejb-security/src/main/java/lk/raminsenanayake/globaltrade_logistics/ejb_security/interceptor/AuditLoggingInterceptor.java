@@ -30,26 +30,22 @@ public class AuditLoggingInterceptor implements Serializable {
         String caller = "ANONYMOUS";
         String callerRole = "SYSTEM";
 
-        try {
-            if (sessionContext != null) {
-                Principal callerPrincipal = sessionContext.getCallerPrincipal();
-                if (callerPrincipal != null && !callerPrincipal.getName().isEmpty()) {
-                    caller = callerPrincipal.getName();
-                }
-                if (sessionContext.isCallerInRole("ADMIN")) {
-                    callerRole = "ADMIN";
-                } else if (sessionContext.isCallerInRole("LOGISTIC_PERSONNEL")) {
-                    callerRole = "LOGISTIC_PERSONNEL";
-                } else if (sessionContext.isCallerInRole("CUSTOM_OFFICIAL")) {
-                    callerRole = "CUSTOM_OFFICIAL";
-                } else if (sessionContext.isCallerInRole("VENDOR")) {
-                    callerRole = "VENDOR";
-                } else if (sessionContext.isCallerInRole("CUSTOMER")) {
-                    callerRole = "CUSTOMER";
-                }
+        if (sessionContext != null) {
+            Principal callerPrincipal = sessionContext.getCallerPrincipal();
+            if (callerPrincipal != null && !callerPrincipal.getName().isEmpty()) {
+                caller = callerPrincipal.getName();
             }
-        } catch (Exception ignored) {
-            // EJB context principal unavailable in unauthenticated/background thread
+            if (sessionContext.isCallerInRole("ADMIN")) {
+                callerRole = "ADMIN";
+            } else if (sessionContext.isCallerInRole("LOGISTIC_PERSONNEL")) {
+                callerRole = "LOGISTIC_PERSONNEL";
+            } else if (sessionContext.isCallerInRole("CUSTOM_OFFICIAL")) {
+                callerRole = "CUSTOM_OFFICIAL";
+            } else if (sessionContext.isCallerInRole("VENDOR")) {
+                callerRole = "VENDOR";
+            } else if (sessionContext.isCallerInRole("CUSTOMER")) {
+                callerRole = "CUSTOMER";
+            }
         }
 
         String entityId = "N/A";

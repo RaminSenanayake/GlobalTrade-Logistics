@@ -1,4 +1,4 @@
-package lk.raminsenanayake.globaltrade_logistics.ejb_customs.service.impl;
+package lk.raminsenanayake.globaltrade_logistics.ejb_customs.service;
 
 import lk.raminsenanayake.globaltrade_logistics.ejb_api.exception.ShipmentNotFoundException;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.CustomsDeclaration;

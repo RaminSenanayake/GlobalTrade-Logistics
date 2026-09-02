@@ -1,4 +1,4 @@
-package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service.impl;
+package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.schedule;
 
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.Schedule;

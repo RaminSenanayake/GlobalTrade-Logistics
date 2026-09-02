@@ -34,14 +34,11 @@ public class PerformanceMonitoringInterceptor implements Serializable {
         String operation = context.getTarget().getClass().getSimpleName() + "." + context.getMethod().getName();
         String caller = "SYSTEM";
 
-        try {
-            if (sessionContext != null) {
-                Principal principal = sessionContext.getCallerPrincipal();
-                if (principal != null && !principal.getName().isEmpty()) {
-                    caller = principal.getName();
-                }
+        if (sessionContext != null) {
+            Principal principal = sessionContext.getCallerPrincipal();
+            if (principal != null && !principal.getName().isEmpty()) {
+                caller = principal.getName();
             }
-        } catch (Exception ignored) {
         }
 
         boolean success = false;

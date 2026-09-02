@@ -1,4 +1,4 @@
-package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service.impl;
+package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.ejb.Stateless;

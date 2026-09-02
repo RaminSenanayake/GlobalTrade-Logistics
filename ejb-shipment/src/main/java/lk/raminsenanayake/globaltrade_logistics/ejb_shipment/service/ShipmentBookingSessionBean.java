@@ -1,4 +1,4 @@
-package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service.impl;
+package lk.raminsenanayake.globaltrade_logistics.ejb_shipment.service;
 
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.Remove;
