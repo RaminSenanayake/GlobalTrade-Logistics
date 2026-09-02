@@ -12,5 +12,5 @@ public interface UserPersistenceService {
     User createUser(String username, String rawPassword, UserRole role);
     List<User> getAllUsers();
     boolean existsByUsername(String username);
-    void updateUserRole(String username, UserRole role);
+    void updateUser(String username, User user);
 }

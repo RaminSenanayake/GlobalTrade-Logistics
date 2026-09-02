@@ -68,10 +68,12 @@ public class UserPersistenceServiceImpl implements UserPersistenceService {
     }
 
     @Override
-    public void updateUserRole(String username, UserRole role) {
-        getUser(username).ifPresent(user -> {
-            user.setRole(role);
-            em.merge(user);
+    public void updateUser(String username, User user) {
+        getUser(username).ifPresent(updatingUser -> {
+            updatingUser.setUsername(user.getUsername());
+            updatingUser.setPassword(user.getPassword());
+            updatingUser.setRole(user.getRole());
+            em.merge(updatingUser);
         });
     }
 }

@@ -13,5 +13,6 @@ public interface VendorPersistenceService {
     List<Vendor> findAll();
     List<Vendor> findByComplianceStatus(VendorComplianceStatus status);
     void updatePerformance(String vendorCode, double rating, double onTimeRate, int totalHandled, int delayedCount);
+    void update(Long id, Vendor vendor);
     void delete(Long id);
 }

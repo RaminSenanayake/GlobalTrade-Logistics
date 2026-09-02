@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,8 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuditLog implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

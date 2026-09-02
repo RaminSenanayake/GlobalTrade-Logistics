@@ -80,6 +80,17 @@ public class VendorPersistenceServiceImpl implements VendorPersistenceService {
     }
 
     @Override
+    public void update(Long id, Vendor vendor) {
+        findById(id).ifPresent(v -> {
+            v.setVendorCode(vendor.getVendorCode());
+            v.setName(vendor.getName());
+            v.setCountry(vendor.getCountry());
+            v.setContactEmail(vendor.getContactEmail());
+            em.merge(v);
+        });
+    }
+
+    @Override
     public void delete(Long id) {
         Vendor v = em.find(Vendor.class, id);
         if (v != null) {

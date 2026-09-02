@@ -1,6 +1,11 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonPatch;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -9,6 +14,7 @@ import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Shipment;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.ShipmentStatus;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.ShipmentPersistenceService;
 
+import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +45,7 @@ public class ShipmentPersistenceServiceImpl implements ShipmentPersistenceServic
     public Optional<Shipment> findByTrackingNumber(String trackingNumber) {
         try {
             Shipment shipment = em.createQuery(
-                    "SELECT s FROM Shipment s LEFT JOIN FETCH s.items WHERE s.trackingNumber = :tn", Shipment.class)
+                            "SELECT s FROM Shipment s LEFT JOIN FETCH s.items WHERE s.trackingNumber = :tn", Shipment.class)
                     .setParameter("tn", trackingNumber)
                     .getSingleResult();
             return Optional.of(shipment);
@@ -75,6 +81,21 @@ public class ShipmentPersistenceServiceImpl implements ShipmentPersistenceServic
                 .setParameter("s2", ShipmentStatus.PENDING_CLEARANCE)
                 .setParameter("thresh", thresholdTime)
                 .getResultList();
+    }
+
+    @Override
+    public void update(Long id, JsonPatch jsonPatch) {
+        findById(id).ifPresent(s -> {
+            try (Jsonb jsonb = JsonbBuilder.create()) {
+                String json = jsonb.toJson(s);
+                JsonObject updatingShipment = Json.createReader(new StringReader(json)).readObject();
+                JsonObject updatedShipmentJson = jsonPatch.apply(updatingShipment);
+                Shipment updatedShipment = jsonb.fromJson(updatedShipmentJson.toString(), Shipment.class);
+                em.merge(updatedShipment);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Override
