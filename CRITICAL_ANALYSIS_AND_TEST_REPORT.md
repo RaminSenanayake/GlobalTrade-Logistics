@@ -15,7 +15,7 @@ The implementation of the GlobalTrade Logistics platform on Jakarta EE 10 / EJB 
 | :--- | :--- | :--- | :--- |
 | **Transaction Demarcation & 2-Phase Commit (2PC)** | Container-Managed Transactions (CMT) natively integrated with standard Java Transaction API (JTA / Jakarta Transaction). | Requires explicit Spring `@Transactional` and external transaction managers (e.g. Atomikos) for distributed multi-resource 2PC. | **EJB Advantage:** In international trade involving multi-step inventory allocation, customs declaration, and partner freight booking, EJB’s out-of-the-box JTA two-phase commit eliminates third-party synchronization bugs and race conditions. |
 | **Standardization vs. Vendor Lock-in** | Jakarta EE specification is open and standardized. Application runs interchangeably across compliant runtimes (GlassFish, WildFly, Payara, Open Liberty). | Proprietary framework governed by Pivotal/Broadcom. Non-standard annotations (`@Service`, `@Repository`). | **EJB Advantage:** GlobalTrade Logistics adheres strictly to specification standards, preventing commercial vendor lock-in. |
-| **Stateful Conversational State** | Native `@Stateful` session beans managed by container with automated passivation (`@PrePassivate`), activation (`@PostActivate`), and session removal (`@Remove`). | Requires HTTP Session clustering or external Redis state stores with manual cache synchronization. | **EJB Advantage:** For complex freight booking sessions (`ShipmentBookingSessionBean`), EJB’s native lifecycle management maintains conversing clients with guaranteed passivation without extra infrastructure. |
+| **Stateful Conversational State** | Native `@Stateful` session beans managed by container with automated passivation (`@PrePassivate`), activation (`@PostActivate`), and session removal (`@Remove`). | Requires HTTP Session clustering or external Redis state stores with manual cache synchronization. | **EJB Advantage:** For complex freight booking sessions ([`ShipmentBookingSessionBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/ShipmentBookingSessionBean.java)), EJB’s native lifecycle management maintains conversing clients with guaranteed passivation without extra infrastructure. |
 | **Concurrency & Singletons** | `@Singleton` with Container-Managed Concurrency (`@Lock(READ)` / `@Lock(WRITE)`). | Singleton beans are standard beans, but thread-safety requires manual Java concurrency primitives (`synchronized`, `ReentrantReadWriteLock`). | **EJB Advantage:** Declarative `@Lock(READ)` enables high-throughput non-blocking status reads across hundreds of concurrent dispatchers while safeguarding write operations. |
 | **Deployment Footprint & Boot Time** | Modular application server runtime managing multi-module EAR archives. | Self-contained runnable FAT jars with embedded Tomcat/Jetty. | **Spring Advantage:** Faster developer iteration during local testing, though EAR deployments provide shared classloading and centralized administration. |
 
@@ -41,19 +41,27 @@ To ensure functional correctness, transactional integrity, and security complian
 
 ### 2.1 Test Execution Summary
 
-- **Total Test Cases Executed:** 14
-- **Passed:** 14
+- **Total Test Cases Executed:** 16
+- **Passed:** 16
 - **Failures:** 0
 - **Errors:** 0
 - **Skipped:** 0
-- **Reactor Modules Verified:** 9 modules (`persistence`, `ejb-api`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`, `ear`, parent root)
+- **Reactor Modules Verified:** 9 modules (`globaltrade-logistics`, `persistence`, `ejb-api`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`, `ear`)
 - **Status:** **100% BUILD SUCCESS**
 
 ---
 
 ### 2.2 Detailed Test Breakdown by Module
 
-#### A. Customs Compliance Module ([`CustomsComplianceBeanTest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-customs/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_customs/service/impl/CustomsComplianceBeanTest.java))
+#### A. Security & Interceptors Module ([`RegulatoryComplianceInterceptorTest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/RegulatoryComplianceInterceptorTest.java))
+1. **`validateShipmentCompliance_EmbargoedCountry_ThrowsExceptionAndAlerts`**:
+   - *Objective:* Confirms trade sanction detection when destination country is sanctioned (e.g., `PRK`), throwing [`TradeComplianceViolationException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/TradeComplianceViolationException.java) and persisting a critical alert.
+   - *Result:* **PASSED**
+2. **`validateShipmentCompliance_HighValue_CreatesWarningAlert`**:
+   - *Objective:* Confirms high declared value shipments (> $100,000 USD) generate a special compliance verification alert while allowing processing to continue.
+   - *Result:* **PASSED**
+
+#### B. Customs Compliance Module ([`CustomsComplianceBeanTest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-customs/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_customs/service/CustomsComplianceBeanTest.java))
 1. **`submitDeclaration_GeneratesDecNumber_AndSaves`**:
    - *Objective:* Verifies declaration number formatting (`DEC-...`), filing deadline assignment, and persistence.
    - *Result:* **PASSED**
@@ -64,41 +72,41 @@ To ensure functional correctness, transactional integrity, and security complian
    - *Objective:* Asserts declaration status change to `REJECTED`, shipment placed on `CUSTOMS_HOLD`, and dispatch of a `CUSTOMS_HOLD` supply chain alert.
    - *Result:* **PASSED**
 
-#### B. Shipment & Logistics Module ([`ejb-shipment`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/))
-1. **[`BatchLogisticsBeanTest.processBatchDispatch_MultipleItems_ReturnsSummary`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/BatchLogisticsBeanTest.java)**:
-   - *Objective:* Verifies batch processing of multiple items, tracking number assignment, and accurate result counts.
+#### C. Shipment & Logistics Module ([`ejb-shipment`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/))
+1. **[`BatchLogisticsBeanTest.processBatchDispatch_MultipleItems_ReturnsSummary`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/BatchLogisticsBeanTest.java)**:
+   - *Objective:* Verifies batch processing of multiple items using [`BatchDispatchItem`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/BatchDispatchItem.java), tracking number assignment, and accurate result counts in [`BatchDispatchResult`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/BatchDispatchResult.java).
    - *Result:* **PASSED**
-2. **[`OrderFulfillmentBeanTest.fulfillOrder_SufficientInventory_CreatesShipmentAndDeductsStock`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/OrderFulfillmentBeanTest.java)**:
-   - *Objective:* Verifies stock verification, atomic decrement, and shipment creation.
+2. **[`OrderFulfillmentBeanTest.fulfillOrder_SufficientInventory_CreatesShipmentAndDeductsStock`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/OrderFulfillmentBeanTest.java)**:
+   - *Objective:* Verifies stock verification with [`OrderItemDto`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/OrderItemDto.java), atomic decrement, and shipment creation.
    - *Result:* **PASSED**
-3. **[`OrderFulfillmentBeanTest.fulfillOrder_InsufficientInventory_ThrowsException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/OrderFulfillmentBeanTest.java)**:
+3. **[`OrderFulfillmentBeanTest.fulfillOrder_InsufficientInventory_ThrowsException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/OrderFulfillmentBeanTest.java)**:
    - *Objective:* Confirms [`InsufficientInventoryException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/InsufficientInventoryException.java) is thrown when requested quantity exceeds available stock.
    - *Result:* **PASSED**
-4. **[`RouteOptimizationBeanTest.calculateOptimalRoute_CostPriority_SelectsCheapest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/RouteOptimizationBeanTest.java)**:
-   - *Objective:* Validates that `COST` priority selects the ocean route (`MAERSK-OCEAN`).
+4. **[`RouteOptimizationBeanTest.calculateOptimalRoute_CostPriority_SelectsCheapest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/RouteOptimizationBeanTest.java)**:
+   - *Objective:* Validates that `COST` priority selects the ocean route (`MAERSK-OCEAN`) and populates [`RouteResult`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/RouteResult.java).
    - *Result:* **PASSED**
-5. **[`RouteOptimizationBeanTest.calculateOptimalRoute_SpeedPriority_SelectsFastest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/RouteOptimizationBeanTest.java)**:
+5. **[`RouteOptimizationBeanTest.calculateOptimalRoute_SpeedPriority_SelectsFastest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/RouteOptimizationBeanTest.java)**:
    - *Objective:* Validates that `SPEED` priority selects express air route (`DHL-EXPRESS`).
    - *Result:* **PASSED**
-6. **[`RouteOptimizationBeanTest.compareRoutes_ReturnsAllAvailableOptions`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/RouteOptimizationBeanTest.java)**:
-   - *Objective:* Confirms all 4 multimodal route options are returned for comparison.
+6. **[`RouteOptimizationBeanTest.compareRoutes_ReturnsAllAvailableOptions`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/RouteOptimizationBeanTest.java)**:
+   - *Objective:* Confirms all 4 multimodal route options ([`RouteOption`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/RouteOption.java)) are returned for comparison.
    - *Result:* **PASSED**
-7. **[`ShipmentTrackingBeanTest.createShipment_GeneratesTrackingNumber_AndSaves`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/ShipmentTrackingBeanTest.java)**:
+7. **[`ShipmentTrackingBeanTest.createShipment_GeneratesTrackingNumber_AndSaves`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/ShipmentTrackingBeanTest.java)**:
    - *Objective:* Asserts tracking number generation and default status `CREATED`.
    - *Result:* **PASSED**
-8. **[`ShipmentTrackingBeanTest.updateShipmentStatus_Valid_UpdatesSuccessfully`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/ShipmentTrackingBeanTest.java)**:
-   - *Objective:* Asserts status update execution.
+8. **[`ShipmentTrackingBeanTest.updateShipmentStatus_Valid_UpdatesSuccessfully`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/ShipmentTrackingBeanTest.java)**:
+   - *Objective:* Asserts status update execution and milestone transitions.
    - *Result:* **PASSED**
-9. **[`ShipmentTrackingBeanTest.updateShipmentStatus_NonExistent_ThrowsException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/ShipmentTrackingBeanTest.java)**:
+9. **[`ShipmentTrackingBeanTest.updateShipmentStatus_NonExistent_ThrowsException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/ShipmentTrackingBeanTest.java)**:
    - *Objective:* Confirms [`ShipmentNotFoundException`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/exception/ShipmentNotFoundException.java) is thrown for unknown tracking numbers.
    - *Result:* **PASSED**
 
-#### C. Vendor Management Module ([`VendorEvaluationBeanTest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-vendor/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_vendor/service/impl/VendorEvaluationBeanTest.java))
+#### D. Vendor Management Module ([`VendorEvaluationBeanTest`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-vendor/src/test/java/lk/raminsenanayake/globaltrade_logistics/ejb_vendor/service/impl/VendorEvaluationBeanTest.java))
 1. **`registerVendor_GeneratesCodeAndDefaults`**:
    - *Objective:* Confirms vendor code generation (`VND-...`) and initial status `COMPLIANT`.
    - *Result:* **PASSED**
 2. **`evaluateVendor_CalculatesScorecardAndPersists`**:
-   - *Objective:* Tests SLA evaluation logic and scorecard calculation.
+   - *Objective:* Tests SLA evaluation logic and [`VendorScorecard`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-api/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_api/dto/VendorScorecard.java) calculation.
    - *Result:* **PASSED**
 
 ---
@@ -106,7 +114,7 @@ To ensure functional correctness, transactional integrity, and security complian
 ## 3. Concurrency, Locking, and Resilience Analysis
 
 1. **Singleton Concurrency Under High Load**:
-   - The [`SupplyChainMonitoringBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/impl/SupplyChainMonitoringBean.java) employs Container-Managed Concurrency (`@ConcurrencyManagement(CONTAINER)`).
+   - The [`SupplyChainMonitoringBean`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-shipment/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_shipment/service/SupplyChainMonitoringBean.java) employs Container-Managed Concurrency (`@ConcurrencyManagement(CONTAINER)`).
    - Read operations (`getSystemStatus`, `getUnacknowledgedAlerts`, `getRecentPerformanceMetrics`) acquire non-exclusive `@Lock(READ)` locks, allowing concurrent requests without thread contention.
    - Mutating operations (`acknowledgeAlert`) acquire exclusive `@Lock(WRITE)` locks, safeguarding state transitions.
 
@@ -121,4 +129,4 @@ To ensure functional correctness, transactional integrity, and security complian
 
 ## 4. Conclusion
 
-The GlobalTrade Logistics application demonstrates a full realization of the Jakarta EE 10 / EJB 3.1+ specification with clean multi-module separation. With 100% test pass rate and automated EAR packaging, the platform satisfies all coursework, architectural, and runtime requirements.
+The GlobalTrade Logistics application demonstrates a full realization of the Jakarta EE 10 / EJB 3.1+ specification with clean multi-module separation. With 100% test pass rate (16/16 tests passing) and automated EAR packaging, the platform satisfies all coursework, architectural, and runtime requirements.
