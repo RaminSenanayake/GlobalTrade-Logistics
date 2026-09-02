@@ -11,6 +11,7 @@ import lk.raminsenanayake.globaltrade_logistics.web.model.CustomsFilingRequest;
 import lk.raminsenanayake.globaltrade_logistics.web.model.CustomsReviewRequest;
 
 import java.util.List;
+import java.util.Map;
 
 @Path("/customs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -41,14 +42,21 @@ public class CustomsController {
     public Response reviewDeclaration(@PathParam("declarationNumber") String declarationNumber, CustomsReviewRequest request) {
         CustomsDeclarationStatus status = CustomsDeclarationStatus.valueOf(request.getStatus().toUpperCase());
         customsService.reviewDeclaration(declarationNumber, status, request.getReviewedBy(), request.getNotes());
-        return Response.ok("{\"message\": \"Customs declaration review recorded successfully\"}").build();
+        return Response.ok(
+                Map.of("message", "Customs declaration review recorded successfully")
+        ).build();
     }
 
     @GET
     @Path("/compliance/{trackingNumber}")
     public Response checkCompliance(@PathParam("trackingNumber") String trackingNumber) {
         boolean compliant = customsService.checkCompliance(trackingNumber);
-        return Response.ok("{\"trackingNumber\": \"" + trackingNumber + "\", \"compliant\": " + compliant + "}").build();
+        return Response.ok(
+                Map.of(
+                        "trackingNumber", trackingNumber,
+                        "compliant", compliant
+                )
+        ).build();
     }
 
     @GET
