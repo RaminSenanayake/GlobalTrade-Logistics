@@ -12,6 +12,7 @@ import lk.raminsenanayake.globaltrade_logistics.web.model.AssignVendorRequest;
 import lk.raminsenanayake.globaltrade_logistics.web.model.CreateVendorRequest;
 
 import java.util.List;
+import java.util.Map;
 
 @Path("/vendors")
 @Produces(MediaType.APPLICATION_JSON)
@@ -61,6 +62,6 @@ public class VendorController {
     @Path("/assign")
     public Response assignVendor(AssignVendorRequest request) {
         vendorService.assignVendorToShipment(request.getTrackingNumber(), request.getVendorCode());
-        return Response.ok("{\"message\": \"Vendor assigned successfully\"}").build();
+        return Response.ok(Map.of("message", "Vendor assigned successfully")).build();
     }
 }

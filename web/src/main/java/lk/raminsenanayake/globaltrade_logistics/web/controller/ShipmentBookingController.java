@@ -14,6 +14,7 @@ import lk.raminsenanayake.globaltrade_logistics.web.model.StartBookingRequest;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.util.Map;
 
 @Path("/booking")
 @Produces(MediaType.APPLICATION_JSON)
@@ -49,7 +50,7 @@ public class ShipmentBookingController {
     public Response startBooking(StartBookingRequest request, @Context HttpServletRequest req) {
         ShipmentBookingServiceLocal service = getBookingService(req);
         service.startBooking(request.getSenderUsername(), request.getOrigin(), request.getDestination());
-        return Response.ok("{\"message\": \"Booking session initiated for " + request.getSenderUsername() + "\"}").build();
+        return Response.ok(Map.of("message", "Booking session initiated for " + request.getSenderUsername())).build();
     }
 
     @POST
@@ -57,7 +58,7 @@ public class ShipmentBookingController {
     public Response addItem(AddBookingItemRequest request, @Context HttpServletRequest req) {
         ShipmentBookingServiceLocal service = getBookingService(req);
         service.addItem(request.getSku(), request.getDescription(), request.getQuantity(), request.getWeightKg(), request.getDeclaredValue());
-        return Response.ok("{\"message\": \"Item added to booking session: " + request.getSku() + "\"}").build();
+        return Response.ok(Map.of("message", "Item added to booking session: " + request.getSku())).build();
     }
 
     @DELETE
@@ -65,7 +66,7 @@ public class ShipmentBookingController {
     public Response removeItem(@PathParam("sku") String sku, @Context HttpServletRequest req) {
         ShipmentBookingServiceLocal service = getBookingService(req);
         service.removeItem(sku);
-        return Response.ok("{\"message\": \"Item removed: " + sku + "\"}").build();
+        return Response.ok(Map.of("message", "Item removed: " + sku)).build();
     }
 
     @POST
@@ -73,7 +74,7 @@ public class ShipmentBookingController {
     public Response selectCarrier(SelectCarrierRequest request, @Context HttpServletRequest req) {
         ShipmentBookingServiceLocal service = getBookingService(req);
         service.selectCarrier(request.getCarrierCode(), request.getServiceLevel());
-        return Response.ok("{\"message\": \"Carrier selected: " + request.getCarrierCode() + "\"}").build();
+        return Response.ok(Map.of("message", "Carrier selected: " + request.getCarrierCode())).build();
     }
 
     @GET
@@ -98,6 +99,6 @@ public class ShipmentBookingController {
         ShipmentBookingServiceLocal service = getBookingService(req);
         service.cancelBooking();
         req.getSession().removeAttribute(BOOKING_SESSION_ATTR);
-        return Response.ok("{\"message\": \"Booking session canceled successfully\"}").build();
+        return Response.ok(Map.of("message", "Booking session canceled successfully")).build();
     }
 }

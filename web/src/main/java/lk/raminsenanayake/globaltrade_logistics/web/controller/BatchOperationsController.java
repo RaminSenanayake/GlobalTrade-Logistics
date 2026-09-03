@@ -9,6 +9,7 @@ import lk.raminsenanayake.globaltrade_logistics.ejb_api.shipment.BatchLogisticsS
 import lk.raminsenanayake.globaltrade_logistics.web.model.BatchDispatchRequest;
 
 import java.util.List;
+import java.util.Map;
 
 @Path("/batch")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,9 +28,8 @@ public class BatchOperationsController {
 
     @POST
     @Path("/manifest")
-    @Produces(MediaType.TEXT_PLAIN)
     public Response generateManifest(List<String> trackingNumbers) {
         String manifest = batchService.generateConsolidatedManifest(trackingNumbers);
-        return Response.ok(manifest).build();
+        return Response.ok(Map.of("manifest", manifest)).build();
     }
 }

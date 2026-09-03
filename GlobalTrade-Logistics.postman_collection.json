@@ -1,0 +1,956 @@
+{
+  "info": {
+    "_postman_id": "9b1e2c3d-5f84-4e9a-b812-7d8e4f1a2345",
+    "name": "GlobalTrade Logistics - Complete API (Strict JSON)",
+    "description": "Comprehensive Postman collection covering all REST endpoints for GlobalTrade Logistics Enterprise System. All endpoints strictly consume and produce `application/json`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vendorCode",
+      "value": "VND-APEX01",
+      "type": "string"
+    },
+    {
+      "key": "trackingNumber",
+      "value": "TRK-2026-001",
+      "type": "string"
+    },
+    {
+      "key": "declarationNumber",
+      "value": "DEC-2026-001",
+      "type": "string"
+    },
+    {
+      "key": "sku",
+      "value": "SKU-ELEC-001",
+      "type": "string"
+    },
+    {
+      "key": "inventoryId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "alertId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Authentication & Users",
+      "item": [
+        {
+          "name": "Login (Get JWT Bearer Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.accessToken) {",
+                  "        pm.collectionVariables.set('token', data.accessToken);",
+                  "    } else if (data.token) {",
+                  "        pm.collectionVariables.set('token', data.token);",
+                  "    }",
+                  "    if (data.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticates user credentials and returns JSON JWT access and refresh tokens."
+          }
+        },
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.accessToken) {",
+                  "        pm.collectionVariables.set('token', data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Exchange a valid refresh token for a new access token in JSON."
+          }
+        },
+        {
+          "name": "Register User (ADMIN only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"logistic_user1\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"LOGISTIC_PERSONNEL\",\n  \"fullName\": \"John Logistics\",\n  \"email\": \"john@globaltrade.lk\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registers a new system user. Roles: CUSTOMER, ADMIN, LOGISTIC_PERSONNEL, VENDOR, CUSTOM_OFFICIAL."
+          }
+        },
+        {
+          "name": "List All Users (ADMIN only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "users"]
+            },
+            "description": "Retrieves the JSON list of all registered system users."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Vendor Evaluation & Management",
+      "item": [
+        {
+          "name": "Register Vendor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.vendorCode) {",
+                  "        pm.collectionVariables.set('vendorCode', data.vendorCode);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Apex Global Freight Ltd\",\n  \"country\": \"Sri Lanka\",\n  \"contactEmail\": \"dispatch@apexfreight.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors"]
+            },
+            "description": "Backed by VendorEvaluationBean.registerVendor(). Roles: ADMIN, LOGISTIC_PERSONNEL."
+          }
+        },
+        {
+          "name": "Get All Vendors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors"]
+            },
+            "description": "Retrieves JSON list of all registered vendors."
+          }
+        },
+        {
+          "name": "Get Vendors by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors?status=COMPLIANT",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "COMPLIANT",
+                  "description": "Values: COMPLIANT, UNDER_REVIEW, PROBATION, SUSPENDED"
+                }
+              ]
+            },
+            "description": "Filter vendors by compliance status."
+          }
+        },
+        {
+          "name": "Evaluate Vendor Performance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorCode}}/evaluate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors", "{{vendorCode}}", "evaluate"]
+            },
+            "description": "Evaluates SLA, on-time delivery rate, delayed shipments, and returns VendorScorecard JSON."
+          }
+        },
+        {
+          "name": "Get Vendor Scorecard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorCode}}/scorecard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors", "{{vendorCode}}", "scorecard"]
+            },
+            "description": "Retrieves scorecard metrics and recommendations for a vendor in JSON."
+          }
+        },
+        {
+          "name": "Assign Vendor to Shipment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackingNumber\": \"{{trackingNumber}}\",\n  \"vendorCode\": \"{{vendorCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vendors", "assign"]
+            },
+            "description": "Assigns vendor to shipment. Roles: ADMIN, LOGISTIC_PERSONNEL."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Shipment Tracking & Management",
+      "item": [
+        {
+          "name": "Create Shipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.trackingNumber) {",
+                  "        pm.collectionVariables.set('trackingNumber', data.trackingNumber);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderUsername\": \"customer1\",\n  \"originCountry\": \"Sri Lanka\",\n  \"destinationCountry\": \"United States\",\n  \"originHub\": \"CMB-HUB\",\n  \"destinationHub\": \"JFK-HUB\",\n  \"carrierName\": \"DHL Express\",\n  \"hazardous\": false,\n  \"weightKg\": 14.5,\n  \"declaredValueUSD\": 1250.00,\n  \"assignedVendor\": \"{{vendorCode}}\",\n  \"items\": [\n    {\n      \"itemSku\": \"SKU-ELEC-001\",\n      \"itemName\": \"Industrial Microcontroller\",\n      \"quantity\": 10,\n      \"unitPrice\": 125.00,\n      \"weightKg\": 1.45\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments"]
+            },
+            "description": "Creates a new shipment with consignment line items."
+          }
+        },
+        {
+          "name": "Get Shipment by Tracking Number",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/{{trackingNumber}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments", "{{trackingNumber}}"]
+            },
+            "description": "Retrieves comprehensive shipment tracking details in JSON."
+          }
+        },
+        {
+          "name": "Get Shipments by Sender",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/user/customer1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments", "user", "customer1"]
+            },
+            "description": "Retrieves all shipments dispatched by a specific username in JSON."
+          }
+        },
+        {
+          "name": "Get All Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments"]
+            },
+            "description": "Retrieves all shipments across the logistics network."
+          }
+        },
+        {
+          "name": "Update Shipment Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_TRANSIT\",\n  \"updatedBy\": \"dispatch_officer_01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/{{trackingNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments", "{{trackingNumber}}", "status"]
+            },
+            "description": "Status values: CREATED, PENDING_CLEARANCE, CUSTOMS_HOLD, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, DELAYED, CANCELLED."
+          }
+        },
+        {
+          "name": "Detect Potential Delays",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/delays",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipments", "delays"]
+            },
+            "description": "Scans active shipments and returns consignments at risk of delay."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Stateful Shipment Booking Workflow",
+      "item": [
+        {
+          "name": "Step 1: Start Booking Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderUsername\": \"customer1\",\n  \"origin\": \"Colombo, Sri Lanka\",\n  \"destination\": \"Hamburg, Germany\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "start"]
+            },
+            "description": "Initializes stateful shipment booking session in JSON."
+          }
+        },
+        {
+          "name": "Step 2: Add Item to Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{sku}}\",\n  \"description\": \"Optical Sensors Batch\",\n  \"quantity\": 25,\n  \"weightKg\": 5.2,\n  \"declaredValue\": 3400.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "items"]
+            },
+            "description": "Adds an inventory item/cargo piece to current active booking session."
+          }
+        },
+        {
+          "name": "Step 3: Remove Item from Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/items/{{sku}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "items", "{{sku}}"]
+            },
+            "description": "Removes an item from current session by SKU."
+          }
+        },
+        {
+          "name": "Step 4: Select Carrier & Service Level",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrierCode\": \"MAERSK-SEA\",\n  \"serviceLevel\": \"EXPRESS_OCEAN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/carrier",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "carrier"]
+            },
+            "description": "Sets the preferred carrier and transit tier for the booking session."
+          }
+        },
+        {
+          "name": "Step 5: Get Booking Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "summary"]
+            },
+            "description": "Returns JSON summary of total weight, valuation, and rates."
+          }
+        },
+        {
+          "name": "Step 6: Confirm Booking (Generates Shipment)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "confirm"]
+            },
+            "description": "Finalizes the booking session into a persistent Shipment entity (JSON)."
+          }
+        },
+        {
+          "name": "Cancel Booking Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/booking/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "booking", "cancel"]
+            },
+            "description": "Cancels and discards the stateful booking session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Customs Clearance & Compliance",
+      "item": [
+        {
+          "name": "Submit Customs Declaration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.declarationNumber) {",
+                  "        pm.collectionVariables.set('declarationNumber', data.declarationNumber);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackingNumber\": \"{{trackingNumber}}\",\n  \"originCountry\": \"Sri Lanka\",\n  \"destinationCountry\": \"United States\",\n  \"cargoDescription\": \"Precision Industrial Sensors\",\n  \"declaredValueUSD\": 5000.00,\n  \"tariffCode\": \"HS-8541.40.00\",\n  \"dutyFeeUSD\": 250.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customs/declarations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customs", "declarations"]
+            },
+            "description": "Submits customs declaration and returns created CustomsDeclaration JSON."
+          }
+        },
+        {
+          "name": "Review Customs Declaration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"reviewedBy\": \"Officer_Kamal_Customs\",\n  \"notes\": \"All tariff documents verified. Cleared for export.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customs/declarations/{{declarationNumber}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customs", "declarations", "{{declarationNumber}}", "review"]
+            },
+            "description": "Records review outcome in JSON. Statuses: PENDING_SUBMISSION, SUBMITTED, INSPECTION_REQUIRED, APPROVED, REJECTED."
+          }
+        },
+        {
+          "name": "Check Shipment Customs Compliance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customs/compliance/{{trackingNumber}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customs", "compliance", "{{trackingNumber}}"]
+            },
+            "description": "Returns JSON status indicating if the shipment has cleared customs."
+          }
+        },
+        {
+          "name": "Get Pending Declarations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customs/declarations/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customs", "declarations", "pending"]
+            },
+            "description": "Lists declarations awaiting customs review in JSON."
+          }
+        },
+        {
+          "name": "Get Declarations with Approaching Deadlines",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customs/declarations/deadlines?hours=24",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customs", "declarations", "deadlines"],
+              "query": [
+                {
+                  "key": "hours",
+                  "value": "24",
+                  "description": "Window in hours (default 24)"
+                }
+              ]
+            },
+            "description": "Alerts on customs declarations nearing SLA cut-off deadlines."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Inventory & Warehouse Management",
+      "item": [
+        {
+          "name": "Create Inventory Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var data = pm.response.json();",
+                  "    if (data.id) {",
+                  "        pm.collectionVariables.set('inventoryId', data.id.toString());",
+                  "    }",
+                  "    if (data.sku) {",
+                  "        pm.collectionVariables.set('sku', data.sku);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{sku}}\",\n  \"name\": \"Microcontroller Board Model X\",\n  \"category\": \"Electronics\",\n  \"qty\": 150,\n  \"reorderThreshold\": 20,\n  \"unitPrice\": 85.50,\n  \"warehouseLocation\": \"WH-COLOMBO-A3\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory"]
+            },
+            "description": "Adds a new warehouse inventory record in JSON. Roles: ADMIN, LOGISTIC_PERSONNEL."
+          }
+        },
+        {
+          "name": "Get All Inventory Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory"]
+            },
+            "description": "Retrieves entire inventory catalog in JSON."
+          }
+        },
+        {
+          "name": "Get Inventory by SKU",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/{{sku}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "{{sku}}"]
+            },
+            "description": "Retrieves stock details for a single SKU in JSON."
+          }
+        },
+        {
+          "name": "Get Low Stock Items (Below Reorder Threshold)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/low-stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "low-stock"]
+            },
+            "description": "Identifies items whose stock levels have fallen below safety reorder threshold."
+          }
+        },
+        {
+          "name": "Restock Inventory Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{sku}}\",\n  \"quantity\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/{{sku}}/restock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "{{sku}}", "restock"]
+            },
+            "description": "Restocks quantity for the specified SKU. Roles: ADMIN, LOGISTIC_PERSONNEL."
+          }
+        },
+        {
+          "name": "Delete Inventory Item (ADMIN only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/{{inventoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "{{inventoryId}}"]
+            },
+            "description": "Deletes inventory record by primary ID. Roles: ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Route Optimization & Freight Comparison",
+      "item": [
+        {
+          "name": "Calculate Optimal Route",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/routes/optimize?origin=Colombo&destination=Rotterdam&weight=1200&priority=COST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "routes", "optimize"],
+              "query": [
+                { "key": "origin", "value": "Colombo" },
+                { "key": "destination", "value": "Rotterdam" },
+                { "key": "weight", "value": "1200" },
+                { "key": "priority", "value": "COST", "description": "COST, SPEED, or BALANCED" }
+              ]
+            },
+            "description": "Returns JSON RouteResult for optimal freight routing."
+          }
+        },
+        {
+          "name": "Compare Available Routes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/routes/compare?origin=Colombo&destination=Rotterdam&weight=1200",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "routes", "compare"],
+              "query": [
+                { "key": "origin", "value": "Colombo" },
+                { "key": "destination", "value": "Rotterdam" },
+                { "key": "weight", "value": "1200" }
+              ]
+            },
+            "description": "Compares multi-modal freight options (Air, Ocean, Rail, Road) with costs and ETAs in JSON."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Batch Logistics Operations",
+      "item": [
+        {
+          "name": "Process Batch Dispatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"origin\": \"Colombo, LK\",\n      \"destination\": \"Dubai, UAE\",\n      \"senderUsername\": \"customer1\",\n      \"carrier\": \"Emirates SkyCargo\",\n      \"weightKg\": 45.0,\n      \"declaredValue\": 2500.0,\n      \"itemSku\": \"{{sku}}\",\n      \"itemQty\": 10\n    },\n    {\n      \"origin\": \"Colombo, LK\",\n      \"destination\": \"Singapore, SG\",\n      \"senderUsername\": \"customer2\",\n      \"carrier\": \"Singapore Airlines Cargo\",\n      \"weightKg\": 12.0,\n      \"declaredValue\": 800.0,\n      \"itemSku\": \"SKU-ELEC-002\",\n      \"itemQty\": 5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/batch/dispatch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "batch", "dispatch"]
+            },
+            "description": "Processes high-volume batch shipment creation concurrently (JSON)."
+          }
+        },
+        {
+          "name": "Generate Consolidated Manifest",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"{{trackingNumber}}\",\n  \"TRK-2026-002\"\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/batch/manifest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "batch", "manifest"]
+            },
+            "description": "Generates a consolidated freight manifest and returns as a JSON object: `{\"manifest\": \"...\"}`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Supply Chain Monitoring & Health Metrics",
+      "item": [
+        {
+          "name": "Get System Status Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monitoring/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "monitoring", "status"]
+            },
+            "description": "Aggregates overall health, active shipment count, delayed ratio, and unacknowledged alerts in JSON."
+          }
+        },
+        {
+          "name": "Get Unacknowledged Supply Chain Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monitoring/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "monitoring", "alerts"]
+            },
+            "description": "Returns open supply chain alerts (delays, degraded vendor SLAs, low inventory) in JSON."
+          }
+        },
+        {
+          "name": "Acknowledge Supply Chain Alert",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monitoring/alerts/{{alertId}}/acknowledge",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "monitoring", "alerts", "{{alertId}}", "acknowledge"]
+            },
+            "description": "Marks an open alert as acknowledged."
+          }
+        },
+        {
+          "name": "Get Recent Performance Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/monitoring/metrics?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "monitoring", "metrics"],
+              "query": [
+                { "key": "limit", "value": "50", "description": "Number of records to fetch (default 50)" }
+              ]
+            },
+            "description": "Fetches execution time metrics collected by AuditLoggingInterceptor and PerformanceMonitoringInterceptor in JSON."
+          }
+        }
+      ]
+    }
+  ]
+}

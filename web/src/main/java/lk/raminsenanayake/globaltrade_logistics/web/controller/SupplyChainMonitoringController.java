@@ -10,6 +10,7 @@ import lk.raminsenanayake.globaltrade_logistics.persistence.entity.PerformanceMe
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.SupplyChainAlert;
 
 import java.util.List;
+import java.util.Map;
 
 @Path("/monitoring")
 @Produces(MediaType.APPLICATION_JSON)
@@ -37,7 +38,7 @@ public class SupplyChainMonitoringController {
     @Path("/alerts/{id}/acknowledge")
     public Response acknowledgeAlert(@PathParam("id") Long id) {
         monitoringService.acknowledgeAlert(id);
-        return Response.ok("{\"message\": \"Alert " + id + " acknowledged successfully\"}").build();
+        return Response.ok(Map.of("message", "Alert " + id + " acknowledged successfully")).build();
     }
 
     @GET

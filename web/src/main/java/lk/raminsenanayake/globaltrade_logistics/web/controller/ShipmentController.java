@@ -14,6 +14,7 @@ import lk.raminsenanayake.globaltrade_logistics.web.model.UpdateShipmentStatusRe
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Path("/shipments")
 @Produces(MediaType.APPLICATION_JSON)
@@ -82,7 +83,7 @@ public class ShipmentController {
     public Response updateStatus(@PathParam("trackingNumber") String trackingNumber, UpdateShipmentStatusRequest request) {
         ShipmentStatus status = ShipmentStatus.valueOf(request.getStatus().toUpperCase());
         shipmentTrackingService.updateShipmentStatus(trackingNumber, status, request.getUpdatedBy());
-        return Response.ok("{\"message\": \"Status updated successfully\"}").build();
+        return Response.ok(Map.of("message", "Status updated successfully")).build();
     }
 
     @GET

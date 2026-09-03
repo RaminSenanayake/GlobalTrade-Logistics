@@ -13,6 +13,7 @@ import java.util.Set;
 
 @ApplicationScoped
 public class JwtAuthMechanism implements HttpAuthenticationMechanism {
+
     @Override
     public AuthenticationStatus validateRequest(HttpServletRequest request,
                                                 HttpServletResponse response,
@@ -29,12 +30,11 @@ public class JwtAuthMechanism implements HttpAuthenticationMechanism {
                 String username = jwt.getSubject();
                 String role = jwt.getClaim("role").asString();
                 Set<String> roles = role != null ? Set.of(role) : Set.of();
-                System.out.println("roles: " + roles);
                 return context.notifyContainerAboutLogin(username, roles);
             }
         }
 
-        if (context.isProtected()){
+        if (context.isProtected()) {
             return context.responseUnauthorized();
         }
 
