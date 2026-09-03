@@ -25,10 +25,10 @@ The implementation of the GlobalTrade Logistics platform on Jakarta EE 10 / EJB 
 
 | Dimension | Jakarta EE / EJB (Modular EAR) | Cloud-Native Microservices (Quarkus) |
 | :--- | :--- | :--- |
-| **Data Consistency** | ACID transactions with immediate consistency across all intra-EAR modules (`persistence`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`). | Eventual consistency via Saga patterns, event sourcing (Kafka), and outbox patterns. |
+| **Data Consistency** | ACID transactions with immediate consistency across all intra-EAR modules (`persistence`, `ejb-persistence`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`). | Eventual consistency via Saga patterns, event sourcing (Kafka), and outbox patterns. |
 | **Network Overhead** | Collocated in-process invocations via local interfaces (`@Local`). Zero serialization and network hop overhead. | Remote HTTP/gRPC network hops between separate services, incurring serialization latency and network failure modes. |
 | **Operational Complexity** | Single deployment archive (`globaltrade-logistics-ear.ear`) managed on standard application server clusters. | Orchestration overhead (Kubernetes, service meshes, distributed tracing, ingress controllers). |
-| **Modular Isolation** | Dedicated EJB JARs (`ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`) enforce domain boundaries while sharing in-memory speed. | Independent service repositories and individual container images. |
+| **Modular Isolation** | Dedicated EJB JARs (`ejb-persistence`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`) enforce domain boundaries while sharing in-memory speed. | Independent service repositories and individual container images. |
 
 **Architectural Synthesis for GlobalTrade Logistics:**  
 For a core logistics engine where inventory deductions cannot afford split-brain overselling and customs filings must synchronize atomically with shipment creation, an EJB-driven modular enterprise application (`EAR`) provides superior transactional integrity, zero intra-module network latency, and significantly lower infrastructure overhead compared to a distributed microservice network.
@@ -46,7 +46,7 @@ To ensure functional correctness, transactional integrity, and security complian
 - **Failures:** 0
 - **Errors:** 0
 - **Skipped:** 0
-- **Reactor Modules Verified:** 9 modules (`globaltrade-logistics`, `persistence`, `ejb-api`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`, `ear`)
+- **Reactor Modules Verified:** 10 modules (`globaltrade-logistics`, `persistence`, `ejb-persistence`, `ejb-api`, `ejb-security`, `ejb-customs`, `ejb-shipment`, `ejb-vendor`, `web`, `ear`)
 - **Status:** **100% BUILD SUCCESS**
 
 ---
@@ -120,7 +120,7 @@ To ensure functional correctness, transactional integrity, and security complian
 
 2. **Audit Trail Isolation via Interceptors**:
    - In [`AuditLoggingInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/AuditLoggingInterceptor.java), every business invocation across the EJB modules is audited.
-   - Using independent persistence boundaries, audit records are saved even if an individual operation subsequently fails.
+   - Using independent persistence boundaries with `REQUIRES_NEW`, audit records are saved even if an individual business operation subsequently rolls back or fails.
 
 3. **Trade Sanction Enforcement via Interceptors**:
    - The [`RegulatoryComplianceInterceptor`](file:///D:/Projects/bcd%202/GlobalTrade%20Logistics/ejb-security/src/main/java/lk/raminsenanayake/globaltrade_logistics/ejb_security/interceptor/RegulatoryComplianceInterceptor.java) dynamically intercepts shipments destined for embargoed countries (`PRK`, `IRN`, `SYR`, `CUB`, `SDN`) and raises immediate security alerts before business transactions can proceed.
@@ -129,4 +129,4 @@ To ensure functional correctness, transactional integrity, and security complian
 
 ## 4. Conclusion
 
-The GlobalTrade Logistics application demonstrates a full realization of the Jakarta EE 10 / EJB 3.1+ specification with clean multi-module separation. With 100% test pass rate (16/16 tests passing) and automated EAR packaging, the platform satisfies all coursework, architectural, and runtime requirements.
+The GlobalTrade Logistics application demonstrates a full realization of the Jakarta EE 10 / EJB 3.1+ specification with clean 10-module multi-module reactor architecture and a modern React SPA frontend. With 100% test pass rate (16/16 tests passing) and automated EAR packaging, the platform satisfies all coursework, architectural, and runtime requirements.
