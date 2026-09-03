@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>persistence</module>
+        <module>ejb-persistence</module>
         <module>ejb-api</module>
         <module>ejb-security</module>
         <module>ejb-customs</module>
@@ -46,6 +47,12 @@
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
                 <artifactId>persistence</artifactId>
                 <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>
+                <artifactId>ejb-persistence</artifactId>
+                <version>1.0</version>
+                <type>ejb</type>
             </dependency>
             <dependency>
                 <groupId>lk.raminsenanayake.globaltrade-logistics</groupId>

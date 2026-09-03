@@ -1,10 +1,9 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Inventory;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.InventoryPersistenceService;
 
@@ -12,11 +11,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@ApplicationScoped
-@Transactional
+@Stateless
 public class InventoryPersistenceServiceImpl implements InventoryPersistenceService {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "globalTrade-logistics")
     private EntityManager em;
 
     @Override

@@ -1,6 +1,6 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ejb.Stateless;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonPatch;
@@ -9,7 +9,6 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.Shipment;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.ShipmentStatus;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.ShipmentPersistenceService;
@@ -19,11 +18,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@ApplicationScoped
-@Transactional
+@Stateless
 public class ShipmentPersistenceServiceImpl implements ShipmentPersistenceService {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "globalTrade-logistics")
     private EntityManager em;
 
     @Override
@@ -88,8 +86,8 @@ public class ShipmentPersistenceServiceImpl implements ShipmentPersistenceServic
         findById(id).ifPresent(s -> {
             try (Jsonb jsonb = JsonbBuilder.create()) {
                 String json = jsonb.toJson(s);
-                JsonObject updatingShipment = Json.createReader(new StringReader(json)).readObject();
-                JsonObject updatedShipmentJson = jsonPatch.apply(updatingShipment);
+                JsonObject batchShipment = Json.createReader(new StringReader(json)).readObject();
+                JsonObject updatedShipmentJson = jsonPatch.apply(batchShipment);
                 Shipment updatedShipment = jsonb.fromJson(updatedShipmentJson.toString(), Shipment.class);
                 em.merge(updatedShipment);
             } catch (Exception e) {

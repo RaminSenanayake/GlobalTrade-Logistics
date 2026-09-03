@@ -1,5 +1,6 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service;
 
+import jakarta.ejb.Local;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.CustomsDeclaration;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.CustomsDeclarationStatus;
 
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Local
 public interface CustomsPersistenceService {
     CustomsDeclaration save(CustomsDeclaration declaration);
     Optional<CustomsDeclaration> findById(Long id);

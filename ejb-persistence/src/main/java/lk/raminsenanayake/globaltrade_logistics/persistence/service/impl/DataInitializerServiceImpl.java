@@ -1,13 +1,11 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.*;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.*;
 
-@ApplicationScoped
-@Transactional
+@Stateless
 public class DataInitializerServiceImpl implements DataInitializerService {
 
     @Inject

@@ -1,9 +1,8 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lk.raminsenanayake.globaltrade_logistics.persistence.entity.RefreshToken;
 import lk.raminsenanayake.globaltrade_logistics.persistence.service.RefreshTokenPersistenceService;
 
@@ -11,14 +10,12 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-@RequestScoped
-@Transactional
+@Stateless
 public class RefreshTokenPersistenceServiceImpl implements RefreshTokenPersistenceService {
     private static final long REFRESH_TOKEN_VALIDITY_DAYS = 7;
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "globalTrade-logistics")
     private EntityManager em;
-
 
     @Override
     public Optional<RefreshToken> findValidToken(String refreshToken) {
