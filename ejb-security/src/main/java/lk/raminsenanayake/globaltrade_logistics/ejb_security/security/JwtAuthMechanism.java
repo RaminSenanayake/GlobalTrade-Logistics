@@ -34,10 +34,6 @@ public class JwtAuthMechanism implements HttpAuthenticationMechanism {
             }
         }
 
-        if (context.isProtected()) {
-            return context.responseUnauthorized();
-        }
-
         return context.doNothing();
     }
 }
