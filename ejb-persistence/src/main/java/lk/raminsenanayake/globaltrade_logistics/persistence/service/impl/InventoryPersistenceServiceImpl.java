@@ -1,6 +1,8 @@
 package lk.raminsenanayake.globaltrade_logistics.persistence.service.impl;
 
-import jakarta.ejb.Stateless;
+import jakarta.ejb.Lock;
+import jakarta.ejb.LockType;
+import jakarta.ejb.Singleton;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Stateless
+@Singleton
 public class InventoryPersistenceServiceImpl implements InventoryPersistenceService {
 
     @PersistenceContext(unitName = "globalTrade-logistics")
@@ -57,6 +59,7 @@ public class InventoryPersistenceServiceImpl implements InventoryPersistenceServ
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public boolean deductStock(String sku, int quantity) {
         Optional<Inventory> opt = findBySku(sku);
         if (opt.isPresent()) {
@@ -71,6 +74,7 @@ public class InventoryPersistenceServiceImpl implements InventoryPersistenceServ
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void restock(String sku, int quantity) {
         Optional<Inventory> opt = findBySku(sku);
         if (opt.isPresent()) {
@@ -82,6 +86,7 @@ public class InventoryPersistenceServiceImpl implements InventoryPersistenceServ
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void delete(Long id) {
         Inventory item = em.find(Inventory.class, id);
         if (item != null) {
