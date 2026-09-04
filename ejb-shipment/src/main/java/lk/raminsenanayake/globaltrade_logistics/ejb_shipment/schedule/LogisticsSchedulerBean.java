@@ -41,7 +41,7 @@ public class LogisticsSchedulerBean implements LogisticsSchedulerServiceLocal {
     private AlertPersistenceService alertService;
 
     @Override
-    @Schedule(hour = "*", minute = "*/15", persistent = false)
+    @Schedule(hour = "*", minute = "*/15")
     public void runScheduledDelayDetection() {
         LOGGER.info("[SCHEDULER] Running periodic delay detection check...");
         List<Shipment> delayedList = shipmentService.findPotentialDelays(LocalDateTime.now());
@@ -60,7 +60,7 @@ public class LogisticsSchedulerBean implements LogisticsSchedulerServiceLocal {
     }
 
     @Override
-    @Schedule(hour = "*", minute = "*/30", persistent = false)
+    @Schedule(hour = "*", minute = "*/30")
     public void runScheduledCustomsDeadlineCheck() {
         LOGGER.info("[SCHEDULER] Checking for approaching customs filing deadlines...");
         LocalDateTime deadlineThreshold = LocalDateTime.now().plusHours(24);
@@ -77,7 +77,7 @@ public class LogisticsSchedulerBean implements LogisticsSchedulerServiceLocal {
     }
 
     @Override
-    @Schedule(persistent = false)
+    @Schedule
     public void runScheduledInventoryRestockCheck() {
         LOGGER.info("[SCHEDULER] Running midnight inventory restock audit...");
         List<Inventory> lowStock = inventoryService.findBelowReorderThreshold();
